@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Security Center — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Security Center</h1>
+            <p class="text-xs text-slate-400">Manage credentials, demo PIN, simulated accounts, and access audit logs</p>
+        </div>
+        <div class="px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-semibold flex items-center gap-2">
+            <i class="fas fa-shield-check text-sm"></i>
+            <span>Security Score: 95/100</span>
+        </div>
+    </div>
+
+    <!-- Security Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-sm">
+                <i class="fas fa-fingerprint"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-400">Demo UPI PIN</div>
+                <div class="text-sm font-bold text-white">{{ 'Configured (Encrypted)' if user.has_pin else 'Not Set' }}</div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm">
+                <i class="fas fa-envelope-circle-check"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-400">Mandatory OTP</div>
+                <div class="text-sm font-bold text-emerald-400">Verified & Active</div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center text-sm">
+                <i class="fas fa-building-columns"></i>
+            </div>
+            <div>
+                <div class="text-[11px] text-slate-400">Linked Demo Banks</div>
+                <div class="text-sm font-bold text-white">{{ accounts|length }} Accounts</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forms Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Change Demo PIN (Sensitive Action: requires OTP) -->
+        <div class="glass-card p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-key text-cyan-400"></i>
+                    Change Demo UPI PIN
+                </h3>
+                <span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded font-medium">
+                    Requires OTP
+                </span>
+            </div>
+            <p class="text-xs text-slate-400">Update your 4 to 6 digit simulated transaction authorization PIN.</p>
+
+            <form method="POST" action="{{ url_for('security.change_pin') }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div>
+                    <label for="new_pin" class="block text-xs text-slate-300 font-semibold mb-1">New Demo PIN (4-6 digits)</label>
+                    <input type="password" maxlength="6" id="new_pin" name="new_pin" required placeholder="••••" class="w-full text-center text-lg font-mono tracking-widest px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
+                </div>
+
+                <div>
+                    <label for="otp_code" class="block text-xs text-slate-300 font-semibold mb-1">OTP Verification Code</label>
+                    <input type="text" maxlength="6" id="otp_code" name="otp_code" placeholder="Enter code or leave empty to request" class="w-full text-center text-lg font-mono tracking-widest px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
+                    <span class="text-[11px] text-slate-500 block mt-1">If blank, submitting will dispatch an OTP to your email.</span>
+                </div>
+
+                <button type="submit" class="w-full btn-jaganpay py-2 text-xs flex items-center justify-center gap-2">
+                    <span>Submit PIN Change</span>
+                    <i class="fas fa-check text-xs"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Change Password -->
+        <div class="glass-card p-6 space-y-4">
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i class="fas fa-lock text-purple-400"></i>
+                Update Password
+            </h3>
+            <p class="text-xs text-slate-400">Must be at least 8 characters with 1 uppercase letter and 1 digit.</p>
+
+            <form method="POST" action="{{ url_for('security.change_password') }}" class="space-y-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div>
+                    <label for="current_password" class="block text-xs text-slate-300 font-semibold mb-1">Current Password</label>
+                    <input type="password" id="current_password" name="current_password" required placeholder="••••••••••••" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-400">
+                </div>
+
+                <div>
+                    <label for="new_password" class="block text-xs text-slate-300 font-semibold mb-1">New Password</label>
+                    <input type="password" id="new_password" name="new_password" required placeholder="••••••••••••" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-400">
+                </div>
+
+                <div>
+                    <label for="confirm_password" class="block text-xs text-slate-300 font-semibold mb-1">Confirm New Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required placeholder="••••••••••••" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs focus:outline-none focus:border-purple-400">
+                </div>
+
+                <button type="submit" class="w-full btn-jaganpay-outline py-2 text-xs flex items-center justify-center gap-2">
+                    <span>Update Password</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Link Additional Demo Bank Account -->
+    <div class="glass-card p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div>
+                <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                    <i class="fas fa-building-columns text-emerald-400"></i>
+                    Linked Demo Bank Accounts
+                </h3>
+                <p class="text-xs text-slate-400">Simulate linking accounts across different partner banks</p>
+            </div>
+
+            <!-- Form to Add Account -->
+            <form method="POST" action="{{ url_for('security.add_account') }}" class="flex items-center gap-2">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <select name="bank_name" class="py-1.5 px-3 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white">
+                    {% for b in bank_names %}
+                    <option value="{{ b }}">{{ b }}</option>
+                    {% endfor %}
+                </select>
+                <select name="account_type" class="py-1.5 px-3 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white">
+                    <option value="SAVINGS">Savings</option>
+                    <option value="CURRENT">Current</option>
+                </select>
+                <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+                    + Link Bank
+                </button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {% for acc in accounts %}
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 relative">
+                {% if acc.is_primary %}
+                <span class="absolute top-3 right-3 px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-500/30 text-[10px] font-bold">PRIMARY</span>
+                {% endif %}
+                <div class="font-bold text-white text-sm">{{ acc.bank_name }}</div>
+                <div class="text-xs font-mono text-slate-400 mt-0.5">{{ acc.account_number_masked }} &bull; {{ acc.ifsc_code }}</div>
+                <div class="text-base font-black text-cyan-400 mt-3">{{ format_currency(acc.demo_balance) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Recent Security & Login Events -->
+    <div class="glass-card p-6">
+        <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+            <i class="fas fa-shield-virus text-indigo-400"></i>
+            Recent Security & Authentication Events
+        </h3>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                    <tr>
+                        <th class="py-2.5 px-4">Event Type</th>
+                        <th class="py-2.5 px-4">IP Address</th>
+                        <th class="py-2.5 px-4">Status</th>
+                        <th class="py-2.5 px-4">Timestamp (UTC)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                    {% for ev in events %}
+                    <tr>
+                        <td class="py-2.5 px-4 font-mono font-semibold">{{ ev.event_type }}</td>
+                        <td class="py-2.5 px-4 text-slate-400">{{ ev.ip_address or '127.0.0.1' }}</td>
+                        <td class="py-2.5 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ 'bg-emerald-950 text-emerald-400' if ev.status == 'SUCCESS' else 'bg-rose-950 text-rose-400' }}">
+                                {{ ev.status }}
+                            </span>
+                        </td>
+                        <td class="py-2.5 px-4 text-slate-400">{{ ev.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

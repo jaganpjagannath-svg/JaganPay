@@ -1,0 +1,87 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    <div>
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fas fa-heart-pulse text-rose-400"></i>
+            Application Diagnostics & Health
+        </h2>
+        <p class="text-xs text-slate-400">System architecture components, database connectivity, and runtime metrics</p>
+    </div>
+
+    <!-- Health Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="glass-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300">Database Engine</span>
+                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 text-[10px] font-bold">
+                    {{ 'HEALTHY' if health.database_connected else 'DOWN' }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400">
+                Connection pool active. Supporting PostgreSQL and local SQLite fallback.
+            </div>
+        </div>
+
+        <div class="glass-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300">AI Assistant Engine</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ 'bg-emerald-950 text-emerald-400' if health.ai_configured else 'bg-amber-950 text-amber-400' }}">
+                    {{ 'LIVE GEMINI 2.5 SDK' if health.ai_configured else 'HEURISTIC SIMULATOR' }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400">
+                Official Google GenAI SDK integration with graceful local heuristics fallback.
+            </div>
+        </div>
+
+        <div class="glass-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300">n8n Automation Dispatcher</span>
+                <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-400 text-[10px] font-bold">
+                    ASYNCHRONOUS DAEMON
+                </span>
+            </div>
+            <div class="text-xs text-slate-400">
+                Non-blocking daemon worker threads with automatic timeout and error suppression.
+            </div>
+        </div>
+
+        <div class="glass-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300">Python Runtime</span>
+                <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-400 text-[10px] font-mono font-bold">
+                    v{{ health.python_version }}
+                </span>
+            </div>
+            <div class="text-xs text-slate-400">
+                Platform: {{ health.platform }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Details List -->
+    <div class="glass-card p-6">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-4">Runtime Architecture Details</h3>
+        <div class="space-y-3 text-xs divide-y divide-slate-800">
+            <div class="flex items-center justify-between py-1.5">
+                <span class="text-slate-400">Total User Records</span>
+                <span class="font-bold text-white">{{ health.total_users }}</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5">
+                <span class="text-slate-400">Total Transactions Ledgered</span>
+                <span class="font-bold text-white">{{ health.total_transactions }}</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5">
+                <span class="text-slate-400">Sandbox Environment Mode</span>
+                <span class="font-bold text-cyan-400">Active (DEMO_MODE=True)</span>
+            </div>
+            <div class="flex items-center justify-between py-1.5">
+                <span class="text-slate-400">n8n Base URL</span>
+                <span class="font-mono text-slate-300">{{ health.n8n_base_url }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

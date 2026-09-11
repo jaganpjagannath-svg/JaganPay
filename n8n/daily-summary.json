@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - Daily Financial Summary",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 21 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily Schedule 9PM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Simulates gathering daily transactions and compiling recap\nreturn [{\n  json: {\n    reportDate: new Date().toISOString().split('T')[0],\n    totalSimulatedTransactions: 142,\n    totalVolumeINR: 348250.00,\n    highRiskDetected: 3,\n    successRate: '98.6%',\n    summaryMessage: 'Daily JaganPay simulation ledger successfully closed.'\n  }\n}];"
+      },
+      "name": "Compile Financial Metrics",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "status",
+              "value": "SUMMARY_GENERATED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Deliver User Recaps",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Daily Schedule 9PM": {
+      "main": [
+        [
+          {
+            "node": "Compile Financial Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Financial Metrics": {
+      "main": [
+        [
+          {
+            "node": "Deliver User Recaps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

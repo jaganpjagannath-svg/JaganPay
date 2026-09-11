@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Financial Analytics & AI Insights — JaganPay Simulator{% endblock %}
+
+{% block head_extra %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div>
+        <h1 class="text-2xl font-bold text-white">Financial Analytics & AI Insights</h1>
+        <p class="text-xs text-slate-400">Deep-dive into simulated cashflow, category expenditures, and AI recommendations</p>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-4">
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Total Debited (Out)</div>
+            <div class="text-2xl font-bold text-rose-400 mt-1">{{ format_currency(metrics.total_spent) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">{{ metrics.txn_count }} total transactions</div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Total Credited (In)</div>
+            <div class="text-2xl font-bold text-emerald-400 mt-1">{{ format_currency(metrics.total_received) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Demo incoming credits</div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Top Expenditure</div>
+            <div class="text-2xl font-bold text-purple-400 mt-1 truncate">{{ metrics.top_category }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Highest spend volume</div>
+        </div>
+
+        <div class="glass-card p-4">
+            <div class="text-[11px] text-slate-400 uppercase font-semibold">Average Ticket Size</div>
+            <div class="text-2xl font-bold text-cyan-400 mt-1">{{ format_currency(metrics.avg_txn) }}</div>
+            <div class="text-[10px] text-slate-500 mt-0.5">Largest: {{ format_currency(metrics.largest_txn) }}</div>
+        </div>
+    </div>
+
+    <!-- AI Insights Highlight Box -->
+    <div class="glass-card p-6 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-slate-900/80 border-purple-500/30">
+        <div class="flex items-center gap-2.5 mb-3">
+            <div class="w-8 h-8 rounded-lg bg-purple-600/30 text-purple-300 flex items-center justify-center text-sm">
+                <i class="fas fa-wand-magic-sparkles"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-bold text-white">JaganPay AI Financial Copilot</h3>
+                <span class="text-[10px] text-purple-400">Powered by Google GenAI (Gemini 2.5 Flash)</span>
+            </div>
+        </div>
+        <div class="prose prose-invert max-w-none text-xs text-slate-300 leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+            {{ ai_insight | replace('\n', '<br>') | safe }}
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Category Doughnut Chart -->
+        <div class="glass-card p-6">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-pie text-cyan-400"></i>
+                Expenditure by Category
+            </h3>
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Cashflow Bar Comparison -->
+        <div class="glass-card p-6">
+            <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-column text-indigo-400"></i>
+                Cashflow Ratio (In vs. Out)
+            </h3>
+            <div class="h-64 relative flex items-center justify-center">
+                <canvas id="cashflowChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Category Chart
+    const catLabels = {{ chart_categories | safe }};
+    const catData = {{ chart_values | safe }};
+
+    const ctxCat = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+            labels: catLabels,
+            datasets: [{
+                data: catData,
+                backgroundColor: [
+                    '#38bdf8', '#818cf8', '#c084fc', '#f472b6',
+                    '#fbbf24', '#34d399', '#f87171', '#94a3b8'
+                ],
+                borderWidth: 1,
+                borderColor: '#0f172a'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#94a3b8', font: { size: 10 } }
+                }
+            }
+        }
+    });
+
+    // 2. Cashflow Comparison Chart
+    const ctxCash = document.getElementById('cashflowChart').getContext('2d');
+    new Chart(ctxCash, {
+        type: 'bar',
+        data: {
+            labels: ['Total Debited', 'Total Credited'],
+            datasets: [{
+                label: 'Amount (₹)',
+                data: [{{ metrics.total_spent }}, {{ metrics.total_received }}],
+                backgroundColor: ['rgba(244, 63, 94, 0.7)', 'rgba(16, 185, 129, 0.7)'],
+                borderColor: ['#f43f5e', '#10b981'],
+                borderWidth: 1.5,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: { color: '#94a3b8', font: { size: 10 } },
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                },
+                x: {
+                    ticks: { color: '#94a3b8', font: { size: 11 } },
+                    grid: { display: false }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

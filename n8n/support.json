@@ -1,0 +1,68 @@
+{
+  "name": "JaganPay - Support Ticket Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-support",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Support Ticket Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const ticket = items[0].json.body.data || items[0].json.body;\nreturn [{\n  json: {\n    ticketNo: ticket.ticket_no,\n    userEmail: ticket.user_email,\n    subject: ticket.subject,\n    priority: ticket.priority,\n    assignedGroup: ticket.priority === 'HIGH' ? 'ESCALATION_QUEUE' : 'STANDARD_SUPPORT',\n    slaHours: ticket.priority === 'HIGH' ? 4 : 24\n  }\n}];"
+      },
+      "name": "Triage Ticket Priority",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "routeStatus",
+              "value": "QUEUED_FOR_AGENT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Route to Support Desk",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Support Ticket Webhook": {
+      "main": [
+        [
+          {
+            "node": "Triage Ticket Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Triage Ticket Priority": {
+      "main": [
+        [
+          {
+            "node": "Route to Support Desk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,67 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                <i class="fas fa-diagram-project text-emerald-400"></i>
+                n8n Automation Engine Health
+            </h2>
+            <p class="text-xs text-slate-400">Event-driven webhooks connected to modular n8n workflow nodes</p>
+        </div>
+
+        <!-- Manual Test Trigger Form -->
+        <form method="POST" action="{{ url_for('admin.test_automation') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="event_type" value="ADMIN_REPORT"/>
+            <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i class="fas fa-paper-plane text-xs"></i>
+                <span>Dispatch Test Webhook</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Active Webhook Endpoints Table -->
+    <div class="glass-card p-6">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3">Configured Webhook Endpoints</h3>
+        <div class="divide-y divide-slate-800 text-xs">
+            {% for event_name, webhook_url in webhooks.items() %}
+            <div class="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="font-mono font-bold text-white">{{ event_name }}</span>
+                </div>
+                <div class="font-mono text-slate-400 text-[11px] truncate max-w-md bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                    {{ webhook_url }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Workflow Import Guide Box -->
+    <div class="glass-card p-6 bg-slate-900/60">
+        <h3 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+            <i class="fas fa-circle-info text-cyan-400"></i>
+            How to Import Workflows into n8n
+        </h3>
+        <div class="text-xs text-slate-400 space-y-2 leading-relaxed">
+            <p>1. Ensure n8n is running locally or in your cloud environment (e.g. <code>n8n start</code> at <code>http://localhost:5678</code>).</p>
+            <p>2. In the n8n UI, navigate to <strong>Workflows &rarr; Import from File</strong>.</p>
+            <p>3. Select any of the 8 modular workflow blueprints saved in the project's <code>/n8n</code> directory:</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 font-mono text-[11px] text-cyan-300">
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">registration.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">otp.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">payment-success.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">payment-failure.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">risk-alert.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">daily-summary.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">support.json</div>
+                <div class="p-2 rounded bg-slate-950 border border-slate-800">admin-report.json</div>
+            </div>
+            <p class="pt-2">4. Activate the workflows. If n8n is unavailable, JaganPay automatically suppresses connection errors and maintains 100% platform uptime.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

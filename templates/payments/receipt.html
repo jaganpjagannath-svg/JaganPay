@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated Transaction Receipt — JaganPay{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-10">
+    <div class="receipt-card p-8 text-slate-900 border border-slate-200" id="receiptPrintArea">
+        <!-- Receipt Top Header -->
+        <div class="text-center pb-6 border-b border-dashed border-slate-300">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-2 text-white shadow-md">
+                <i class="fas fa-bolt text-lg"></i>
+            </div>
+            <h2 class="text-xl font-black tracking-tight">JAGAN<span class="text-blue-600">PAY</span></h2>
+            <div class="text-[11px] font-bold uppercase tracking-widest text-emerald-600 mt-0.5">
+                Simulated Transaction Receipt
+            </div>
+            <div class="text-[10px] text-rose-600 font-semibold mt-1">
+                DEMO SIMULATION — NO REAL MONEY TRANSFERRED
+            </div>
+        </div>
+
+        <!-- Amount Hero -->
+        <div class="text-center py-6">
+            <div class="text-xs text-slate-500 font-medium uppercase tracking-wider">Amount Transferred</div>
+            <div class="text-4xl font-black text-slate-900 tracking-tight mt-1">
+                {{ format_currency(txn.amount) }}
+            </div>
+            <div class="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                <i class="fas fa-circle-check text-emerald-600"></i>
+                <span>{{ txn.status }}</span>
+            </div>
+        </div>
+
+        <!-- Receipt Cutout Decorator -->
+        <div class="receipt-cutout my-2"></div>
+
+        <!-- Transaction Details Table -->
+        <div class="py-4 space-y-2.5 text-xs text-slate-700">
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Transaction Reference:</span>
+                <span class="font-mono font-bold text-slate-900">{{ txn.reference_no }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Sender UPI:</span>
+                <span class="font-mono font-medium">{{ txn.sender_upi }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Receiver UPI:</span>
+                <span class="font-mono font-medium">{{ txn.receiver_upi }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Payment Type:</span>
+                <span class="font-semibold">{{ txn.type }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Category:</span>
+                <span class="font-semibold">{{ txn.category }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Date & Time (UTC):</span>
+                <span>{{ txn.created_at.strftime('%d %b %Y, %H:%M:%S') }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-slate-500">Simulated Risk Score:</span>
+                <span class="font-bold {{ 'text-emerald-600' if txn.risk_score < 35 else ('text-amber-600' if txn.risk_score < 65 else 'text-rose-600') }}">
+                    {{ txn.risk_score }}/100 ({{ txn.risk_level }})
+                </span>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+                <span class="text-slate-500">Platform Convenience Fee:</span>
+                <span class="font-bold text-emerald-700">₹0.00 Demo Free</span>
+            </div>
+        </div>
+
+        <!-- Footer Barcode / Disclaimer -->
+        <div class="pt-6 border-t border-dashed border-slate-300 text-center text-[10px] text-slate-400 space-y-1">
+            <div class="font-mono tracking-widest text-slate-500">UUID: {{ txn.id }}</div>
+            <div>This receipt is generated automatically for sandbox demonstration.</div>
+        </div>
+    </div>
+
+    <!-- Actions Row -->
+    <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <button type="button" onclick="window.print()" class="w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors border border-slate-700">
+            <i class="fas fa-print"></i>
+            <span>Print Receipt</span>
+        </button>
+        <button type="button" onclick="downloadReceiptText()" class="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors">
+            <i class="fas fa-download"></i>
+            <span>Download Summary</span>
+        </button>
+        <a href="{{ url_for('dashboard.index') }}" class="w-full sm:w-auto px-5 py-2.5 btn-jaganpay-outline text-xs text-center">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+function downloadReceiptText() {
+    const text = `=========================================
+JAGANPAY — SIMULATED TRANSACTION RECEIPT
+DEMO MODE — NO REAL MONEY
+=========================================
+Reference No:   {{ txn.reference_no }}
+Transaction ID: {{ txn.id }}
+Amount:         ₹{{ "%.2f"|format(txn.amount) }}
+Status:         {{ txn.status }}
+Sender:         {{ txn.sender_upi }}
+Receiver:       {{ txn.receiver_upi }}
+Type:           {{ txn.type }}
+Category:       {{ txn.category }}
+Timestamp:      {{ txn.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+Simulated Risk: {{ txn.risk_score }}/100 (${'{{ txn.risk_level }}'})
+=========================================`;
+
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "JaganPay_Receipt_{{ txn.reference_no }}.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Receipt downloaded successfully", "success");
+}
+</script>
+{% endblock %}

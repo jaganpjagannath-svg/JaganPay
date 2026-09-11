@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Console — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Admin Sidebar Nav -->
+        <div class="lg:col-span-1 space-y-4">
+            <div class="glass-card p-4">
+                <div class="flex items-center gap-2 mb-4 pb-3 border-b border-slate-800">
+                    <div class="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-white">Admin Console</div>
+                        <div class="text-[10px] text-purple-400">JaganPay Control Deck</div>
+                    </div>
+                </div>
+
+                <nav class="space-y-1 text-xs font-medium">
+                    <a href="{{ url_for('admin.index') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.index' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-gauge-high w-4"></i>
+                        <span>Overview</span>
+                    </a>
+                    <a href="{{ url_for('admin.users') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.users' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-users w-4"></i>
+                        <span>Manage Users</span>
+                    </a>
+                    <a href="{{ url_for('admin.transactions') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.transactions' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-receipt w-4"></i>
+                        <span>Transactions</span>
+                    </a>
+                    <a href="{{ url_for('admin.risk_alerts') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.risk_alerts' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-triangle-exclamation w-4 text-amber-400"></i>
+                        <span>Simulated Risk Alerts</span>
+                    </a>
+                    <a href="{{ url_for('admin.merchants') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.merchants' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-store w-4"></i>
+                        <span>Merchants</span>
+                    </a>
+                    <a href="{{ url_for('admin.support') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.support' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-headset w-4"></i>
+                        <span>Support Queue</span>
+                    </a>
+                    <a href="{{ url_for('admin.audit_logs') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.audit_logs' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-scroll w-4"></i>
+                        <span>Audit Trail</span>
+                    </a>
+                    <a href="{{ url_for('admin.automation') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.automation' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-diagram-project w-4 text-emerald-400"></i>
+                        <span>n8n Webhooks</span>
+                    </a>
+                    <a href="{{ url_for('admin.system_health') }}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg transition-colors {{ 'bg-purple-900/60 text-white font-semibold' if request.endpoint == 'admin.system_health' else 'text-slate-400 hover:text-white hover:bg-slate-800/60' }}">
+                        <i class="fas fa-heart-pulse w-4 text-rose-400"></i>
+                        <span>System Health</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Main Admin Content Area -->
+        <div class="lg:col-span-3 space-y-6">
+            {% block admin_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

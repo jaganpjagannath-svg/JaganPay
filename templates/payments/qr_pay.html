@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Simulated QR Scanner — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-10">
+    <div class="glass-card p-8 shadow-2xl">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-white">Scan & Pay (Simulated)</h2>
+            <p class="text-xs text-slate-400 mt-1">Scan or paste any demo UPI QR code payload</p>
+        </div>
+
+        <!-- Simulated Camera Viewfinder -->
+        <div class="relative w-full h-64 bg-slate-950 rounded-2xl border-2 border-dashed border-cyan-500/40 flex flex-col items-center justify-center p-6 overflow-hidden mb-6 group">
+            <div class="absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-cyan-500/5 pointer-events-none"></div>
+
+            <!-- Target Reticle Corners -->
+            <div class="w-44 h-44 border-2 border-cyan-400 rounded-xl relative flex items-center justify-center animate-pulse">
+                <div class="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-cyan-300 -mt-1 -ml-1"></div>
+                <div class="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-cyan-300 -mt-1 -mr-1"></div>
+                <div class="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-cyan-300 -mb-1 -ml-1"></div>
+                <div class="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-cyan-300 -mb-1 -mr-1"></div>
+                <i class="fas fa-qrcode text-4xl text-cyan-400/50"></i>
+            </div>
+
+            <div class="text-[11px] text-slate-400 mt-4 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>Camera Simulator Active</span>
+            </div>
+        </div>
+
+        <!-- Manual UPI URI or Payload Paste Form -->
+        <form method="POST" action="{{ url_for('payments.qr_payment') }}" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div>
+                <label for="qr_payload" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                    UPI String or QR Data Payload
+                </label>
+                <div class="relative">
+                    <input type="text" id="qr_payload" name="qr_payload" required placeholder="upi://pay?pa=jagancafe@jaganpay&pn=JaganCafe&am=150" class="w-full px-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-cyan-400">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full btn-jaganpay py-2.5 text-xs flex items-center justify-center gap-2">
+                <span>Process Scanned Payload</span>
+                <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+        </form>
+
+        <!-- Quick Tap Demo Merchant QR Pre-fills -->
+        <div class="mt-6 pt-5 border-t border-slate-800">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider text-center mb-2.5">
+                ⚡ Tap to Simulate Merchant Scan
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" onclick="setPayload('upi://pay?pa=jagancafe@jaganpay&pn=JaganCafe&am=180&tn=Coffee')" class="py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-center text-[11px] text-slate-200 transition-colors">
+                    ☕ Jagan Cafe (₹180)
+                </button>
+                <button type="button" onclick="setPayload('upi://pay?pa=astrastore@jaganpay&pn=AstraStore&am=2499&tn=Earbuds')" class="py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-center text-[11px] text-slate-200 transition-colors">
+                    🎧 Astra (₹2,499)
+                </button>
+                <button type="button" onclick="setPayload('upi://pay?pa=canteen@jaganpay&pn=CampusCanteen&am=85&tn=Snacks')" class="py-2 px-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-center text-[11px] text-slate-200 transition-colors">
+                    🍔 Canteen (₹85)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setPayload(uri) {
+    document.getElementById('qr_payload').value = uri;
+    showToast('Payload loaded into scanner', 'info');
+}
+</script>
+{% endblock %}

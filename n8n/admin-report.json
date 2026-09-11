@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - Admin Daily Health & Financial Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "name": "Daily Schedule 8AM",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{\n  json: {\n    systemDate: new Date().toISOString().split('T')[0],\n    activeUsers: 84,\n    totalTransactions24h: 312,\n    simulatedVolume24h: 894500.00,\n    pendingRiskAlerts: 2,\n    openSupportTickets: 4,\n    servicesStatus: {\n      database: 'OPERATIONAL',\n      aiAssistant: 'HEALTHY',\n      webhookEngine: 'ACTIVE'\n    }\n  }\n}];"
+      },
+      "name": "Aggregate System Metrics",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "reportDelivered",
+              "value": "TRUE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Send Admin Digest",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Daily Schedule 8AM": {
+      "main": [
+        [
+          {
+            "node": "Aggregate System Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate System Metrics": {
+      "main": [
+        [
+          {
+            "node": "Send Admin Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

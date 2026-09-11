@@ -1,0 +1,88 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-white">Registered Demo Users</h2>
+            <p class="text-xs text-slate-400">View user accounts, verification status, and manage active/suspended states</p>
+        </div>
+
+        <form method="GET" action="{{ url_for('admin.users') }}" class="w-full sm:w-64">
+            <input type="text" name="q" value="{{ search or '' }}" placeholder="Search by name, email, phone..." class="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400">
+        </form>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                    <tr>
+                        <th class="py-3 px-4">User</th>
+                        <th class="py-3 px-4">UPI ID</th>
+                        <th class="py-3 px-4">Role</th>
+                        <th class="py-3 px-4 text-right">Demo Balance</th>
+                        <th class="py-3 px-4 text-center">Status</th>
+                        <th class="py-3 px-4 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                    {% for u in users %}
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="py-3 px-4">
+                            <div class="font-bold text-white">{{ u.full_name }}</div>
+                            <div class="text-[11px] text-slate-500">{{ u.email }} &bull; {{ u.phone }}</div>
+                        </td>
+                        <td class="py-3 px-4 font-mono text-cyan-400 font-semibold">
+                            {{ u.primary_upi }}
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ 'bg-purple-950 text-purple-300' if u.role == 'ADMIN' else ('bg-emerald-950 text-emerald-300' if u.role == 'MERCHANT' else 'bg-slate-800 text-slate-300') }}">
+                                {{ u.role }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right font-bold text-white">
+                            {{ format_currency(u.total_demo_balance) }}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            {% if u.is_active %}
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 text-[10px] font-bold">Active</span>
+                            {% else %}
+                            <span class="px-2 py-0.5 rounded-full bg-rose-950 text-rose-400 text-[10px] font-bold">Suspended</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            {% if u.id != current_user.id %}
+                            <form method="POST" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}" class="inline">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="px-2.5 py-1 rounded text-[11px] font-semibold transition-colors {{ 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800' if u.is_active else 'bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800' }}">
+                                    {{ 'Suspend' if u.is_active else 'Activate' }}
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-[10px] text-slate-500 italic">Self</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="py-3 px-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <div>Page {{ pagination.page }} of {{ pagination.pages }}</div>
+            <div class="flex items-center gap-1.5">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.users', page=pagination.prev_num, q=search) }}" class="px-3 py-1 rounded bg-slate-800 text-white">&larr; Prev</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin.users', page=pagination.next_num, q=search) }}" class="px-3 py-1 rounded bg-slate-800 text-white">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

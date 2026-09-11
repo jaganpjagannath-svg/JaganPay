@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - User Registration Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-registration",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Validate incoming payload\nconst body = items[0].json.body;\nif (!body.email || !body.full_name) {\n  throw new Error('Invalid payload: email and full_name required');\n}\n\nreturn [{\n  json: {\n    userId: body.user_id,\n    fullName: body.full_name,\n    email: body.email,\n    phone: body.phone,\n    upiId: body.upi_id,\n    registeredAt: new Date().toISOString(),\n    welcomeSubject: 'Welcome to JaganPay Simulation Platform',\n    status: 'PROVISIONED'\n  }\n}];"
+      },
+      "name": "Validate & Format Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "notificationStatus",
+              "value": "DISPATCHED"
+            },
+            {
+              "name": "logEntry",
+              "value": "User registered and provisioned successfully in simulation environment"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Log Registration Event",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate & Format Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate & Format Data": {
+      "main": [
+        [
+          {
+            "node": "Log Registration Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

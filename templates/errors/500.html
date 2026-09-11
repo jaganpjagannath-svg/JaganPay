@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}500 — Server Error | JaganPay{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-20 text-center">
+    <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mx-auto mb-4 text-amber-400 text-2xl">
+        <i class="fas fa-triangle-exclamation"></i>
+    </div>
+    <h1 class="text-3xl font-black text-white">500</h1>
+    <h2 class="text-base font-bold text-slate-300 mt-1">Simulated Server Fault</h2>
+    <p class="text-xs text-slate-400 mt-2">
+        An unexpected condition occurred. Database transactions have rolled back cleanly to preserve ledger integrity.
+    </p>
+    <a href="{{ url_for('dashboard.index') }}" class="btn-jaganpay inline-flex items-center gap-1.5 text-xs mt-6 px-6 py-2.5">
+        <span>Back to Dashboard</span>
+        <i class="fas fa-arrow-right text-[10px]"></i>
+    </a>
+</div>
+{% endblock %}

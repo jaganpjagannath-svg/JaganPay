@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - Payment Failure Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-payment-failure",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Payment Failure Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json.body.data || items[0].json.body;\nreturn [{\n  json: {\n    referenceNo: data.reference_no,\n    sender: data.sender_email,\n    recipientUpi: data.receiver_upi,\n    amount: data.amount,\n    errorReason: data.error || 'Simulated transaction rejection',\n    urgency: 'MEDIUM',\n    alertAction: 'NOTIFY_USER_AND_ADMIN'\n  }\n}];"
+      },
+      "name": "Process Failure Reason",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "alertLogged",
+              "value": "TRUE"
+            },
+            {
+              "name": "supportTicketSuggested",
+              "value": "TRUE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Dispatch Failure Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Payment Failure Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process Failure Reason",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Failure Reason": {
+      "main": [
+        [
+          {
+            "node": "Dispatch Failure Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

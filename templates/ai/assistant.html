@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}JaganPay AI — Intelligent Financial Assistant{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-500/25">
+                <i class="fas fa-wand-magic-sparkles text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                    JaganPay AI
+                    <span class="text-[10px] bg-purple-950 text-purple-300 border border-purple-500/40 px-2 py-0.5 rounded-full font-mono">Gemini 2.5</span>
+                </h1>
+                <p class="text-xs text-slate-400">Intelligent financial organization & transaction insights</p>
+            </div>
+        </div>
+
+        <span class="text-xs text-slate-500 hidden sm:inline">
+            <i class="fas fa-shield-halved text-cyan-400 mr-1"></i>Simulated Sandbox Model
+        </span>
+    </div>
+
+    <!-- Main Chat Window Card -->
+    <div class="glass-card flex flex-col h-[550px] overflow-hidden">
+        <!-- Message History Stream -->
+        <div id="chatMessages" class="flex-grow overflow-y-auto p-6 space-y-4">
+            <!-- Initial AI Greeting Bubble -->
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="p-3.5 rounded-2xl rounded-tl-none bg-slate-900/90 border border-slate-800 text-xs text-slate-200 max-w-[85%] leading-relaxed shadow-sm">
+                    Hello {{ current_user.full_name }}! I am <strong>JaganPay AI</strong>, your simulated financial copilot.
+                    I can summarize your demo expenditures, analyze spending trends, explain UPI concepts, or offer practical budgeting tips based on your simulated transaction ledger.
+                    <div class="mt-2 text-[10px] text-slate-500 italic">
+                        ℹ️ Demo AI insight: JaganPay operates in demo mode using simulated transactions.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Past Interactions -->
+            {% for h in history %}
+            <div class="flex justify-end">
+                <div class="p-3.5 rounded-2xl rounded-tr-none bg-indigo-600 text-white text-xs max-w-[80%] leading-relaxed shadow-sm">
+                    {{ h.prompt_summary }}
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="p-3.5 rounded-2xl rounded-tl-none bg-slate-900/90 border border-slate-800 text-xs text-slate-200 max-w-[85%] leading-relaxed shadow-sm whitespace-pre-line">
+                    {{ h.response_snippet }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Quick Question Suggestions Pills -->
+        <div class="px-6 py-2 bg-slate-950/40 border-t border-slate-800/80 flex items-center gap-2 overflow-x-auto text-xs">
+            <span class="text-[11px] text-slate-500 whitespace-nowrap">Suggested:</span>
+            <button type="button" onclick="sendQuickPrompt('How much have I spent so far?')" class="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap text-[11px] transition-colors">
+                💰 How much spent?
+            </button>
+            <button type="button" onclick="sendQuickPrompt('Give me 3 smart budgeting rules')" class="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap text-[11px] transition-colors">
+                📊 Budgeting habits
+            </button>
+            <button type="button" onclick="sendQuickPrompt('What is UPI and how does it work?')" class="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap text-[11px] transition-colors">
+                💡 Explain UPI
+            </button>
+            <button type="button" onclick="sendQuickPrompt('How does the simulated risk engine work?')" class="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 whitespace-nowrap text-[11px] transition-colors">
+                🛡️ Risk engine
+            </button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <div class="p-4 bg-slate-900/80 border-t border-slate-800">
+            <form id="aiChatForm" onsubmit="handleChatSubmit(event)" class="flex items-center gap-2">
+                <input type="text" id="aiInput" placeholder="Ask JaganPay AI about your simulated finances..." autocomplete="off" class="flex-grow px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400">
+                <button type="submit" id="aiSendBtn" class="px-5 py-2.5 btn-jaganpay text-xs font-semibold flex items-center gap-1.5 flex-shrink-0">
+                    <span>Send</span>
+                    <i class="fas fa-paper-plane text-[10px]"></i>
+                </button>
+            </form>
+            <div class="text-[10px] text-slate-500 text-center mt-2">
+                JaganPay AI only provides general financial organization. It does not provide regulated advice or execute payments.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function handleChatSubmit(e) {
+    if (e) e.preventDefault();
+    const input = document.getElementById('aiInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    appendMessage(msg, 'user');
+
+    // Add typing indicator
+    const typingId = appendTypingIndicator();
+
+    try {
+        const res = await fetch("{{ url_for('ai.chat') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token() }}"
+            },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+        removeTypingIndicator(typingId);
+
+        if (data.success && data.reply) {
+            appendMessage(data.reply, 'ai');
+        } else {
+            appendMessage(data.message || 'Error processing response', 'ai');
+        }
+    } catch (err) {
+        removeTypingIndicator(typingId);
+        appendMessage('Connection error. Please try again.', 'ai');
+    }
+}
+
+function sendQuickPrompt(text) {
+    document.getElementById('aiInput').value = text;
+    handleChatSubmit(null);
+}
+
+function appendMessage(text, sender) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+
+    if (sender === 'user') {
+        div.className = 'flex justify-end';
+        div.innerHTML = `<div class="p-3.5 rounded-2xl rounded-tr-none bg-indigo-600 text-white text-xs max-w-[80%] leading-relaxed shadow-sm">${escapeHtml(text)}</div>`;
+    } else {
+        div.className = 'flex items-start gap-3';
+        div.innerHTML = `
+            <div class="w-8 h-8 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="p-3.5 rounded-2xl rounded-tl-none bg-slate-900/90 border border-slate-800 text-xs text-slate-200 max-w-[85%] leading-relaxed shadow-sm whitespace-pre-line">${escapeHtml(text)}</div>
+        `;
+    }
+
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+function appendTypingIndicator() {
+    const container = document.getElementById('chatMessages');
+    const id = 'typing_' + Date.now();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'flex items-start gap-3';
+    div.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-purple-600/30 text-purple-300 flex items-center justify-center flex-shrink-0 text-xs">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style="animation-delay: 0.15s"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-bounce" style="animation-delay: 0.3s"></span>
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+function removeTypingIndicator(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+function escapeHtml(string) {
+    const p = document.createElement('p');
+    p.textContent = string;
+    return p.innerHTML;
+}
+</script>
+{% endblock %}

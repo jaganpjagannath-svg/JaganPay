@@ -1,0 +1,74 @@
+{% extends "admin/layout.html" %}
+
+{% block admin_content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-xl font-bold text-white">System Transaction Ledger</h2>
+            <p class="text-xs text-slate-400">Complete audit stream of all simulated digital transfers</p>
+        </div>
+
+        <div class="flex items-center gap-1.5 text-xs">
+            <a href="{{ url_for('admin.transactions', status='all') }}" class="px-2.5 py-1 rounded-lg {{ 'bg-purple-900 text-white font-bold' if current_status == 'all' else 'bg-slate-900 text-slate-400' }}">All</a>
+            <a href="{{ url_for('admin.transactions', status='success') }}" class="px-2.5 py-1 rounded-lg {{ 'bg-purple-900 text-white font-bold' if current_status == 'success' else 'bg-slate-900 text-slate-400' }}">Success</a>
+            <a href="{{ url_for('admin.transactions', status='failed') }}" class="px-2.5 py-1 rounded-lg {{ 'bg-purple-900 text-white font-bold' if current_status == 'failed' else 'bg-slate-900 text-slate-400' }}">Failed</a>
+            <a href="{{ url_for('admin.transactions', status='refunded') }}" class="px-2.5 py-1 rounded-lg {{ 'bg-purple-900 text-white font-bold' if current_status == 'refunded' else 'bg-slate-900 text-slate-400' }}">Refunded</a>
+        </div>
+    </div>
+
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase text-[11px] border-b border-slate-800">
+                    <tr>
+                        <th class="py-3 px-4">Ref Number</th>
+                        <th class="py-3 px-4">Sender</th>
+                        <th class="py-3 px-4">Receiver</th>
+                        <th class="py-3 px-4 text-right">Amount</th>
+                        <th class="py-3 px-4 text-center">Risk Score</th>
+                        <th class="py-3 px-4 text-center">Status</th>
+                        <th class="py-3 px-4 text-right">Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                    {% for t in transactions %}
+                    <tr class="hover:bg-slate-900/40 transition-colors">
+                        <td class="py-3 px-4 font-mono font-bold text-cyan-400">
+                            {{ t.reference_no }}
+                        </td>
+                        <td class="py-3 px-4 font-mono text-[11px] text-slate-300">{{ t.sender_upi }}</td>
+                        <td class="py-3 px-4 font-mono text-[11px] text-slate-300">{{ t.receiver_upi }}</td>
+                        <td class="py-3 px-4 text-right font-bold text-white">{{ format_currency(t.amount) }}</td>
+                        <td class="py-3 px-4 text-center font-bold {{ 'text-rose-400' if t.risk_score >= 65 else ('text-amber-400' if t.risk_score >= 35 else 'text-emerald-400') }}">
+                            {{ t.risk_score }} ({{ t.risk_level }})
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ 'bg-emerald-950 text-emerald-400' if t.status == 'SUCCESS' else ('bg-rose-950 text-rose-400' if t.status == 'FAILED' else 'bg-blue-950 text-blue-400') }}">
+                                {{ t.status }}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-right text-slate-500 text-[11px]">
+                            {{ t.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if pagination and pagination.pages > 1 %}
+        <div class="py-3 px-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <div>Page {{ pagination.page }} of {{ pagination.pages }}</div>
+            <div class="flex items-center gap-1.5">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.transactions', page=pagination.prev_num, status=current_status) }}" class="px-3 py-1 rounded bg-slate-800 text-white">&larr; Prev</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin.transactions', page=pagination.next_num, status=current_status) }}" class="px-3 py-1 rounded bg-slate-800 text-white">Next &rarr;</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}JaganPay — AI-Powered UPI Payment & Automation Simulator{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ["class", '[data-theme="dark"]'],
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: "#2563eb",
+                            purple: "#7c3aed",
+                            cyan: "#06b6d4",
+                            dark: "#0a0f24",
+                            navy: "#0f172a"
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.py" onerror="this.onerror=null;this.href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Custom CSS -->
+    <!-- PWA Manifest & App Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0a0f24">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JaganPay">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
+
+    <!-- DEMO DISCLAIMER BANNER -->
+    <div class="demo-banner flex items-center justify-center gap-2 text-xs py-1.5 px-4 bg-indigo-950/80 border-b border-indigo-500/20 text-indigo-300 text-center">
+        <i class="fas fa-shield-halved text-cyan-400"></i>
+        <span><strong>DEMO SIMULATION MODE</strong> — NO REAL MONEY | All balances, accounts, and transactions are simulated for portfolio and educational demonstration.</span>
+    </div>
+
+    <!-- MAIN NAVBAR -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand Logo -->
+                <div class="flex items-center gap-3">
+                    <a href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('main.index') }}" class="flex items-center gap-2 group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
+                            <i class="fas fa-bolt text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <span class="text-xl font-black tracking-tight text-white flex items-center gap-1">
+                                JAGAN<span class="text-cyan-400">PAY</span>
+                            </span>
+                            <span class="block text-[10px] text-slate-400 uppercase tracking-widest -mt-1 font-semibold">Smart. Secure. Simple.</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                {% if current_user.is_authenticated %}
+                <nav class="hidden md:flex items-center gap-1 lg:gap-2">
+                    <a href="{{ url_for('dashboard.index') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint == 'dashboard.index' }}">
+                        <i class="fas fa-wallet mr-1.5 text-xs text-blue-400"></i>Dashboard
+                    </a>
+                    <a href="{{ url_for('payments.send_money') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint == 'payments.send_money' }}">
+                        <i class="fas fa-paper-plane mr-1.5 text-xs text-cyan-400"></i>Send
+                    </a>
+                    <a href="{{ url_for('payments.receive_money') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint == 'payments.receive_money' }}">
+                        <i class="fas fa-qrcode mr-1.5 text-xs text-emerald-400"></i>Receive / QR
+                    </a>
+                    <a href="{{ url_for('transactions.history') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint.startswith('transactions.') }}">
+                        <i class="fas fa-clock-rotate-left mr-1.5 text-xs text-indigo-400"></i>History
+                    </a>
+                    <a href="{{ url_for('analytics.index') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint == 'analytics.index' }}">
+                        <i class="fas fa-chart-pie mr-1.5 text-xs text-purple-400"></i>Analytics
+                    </a>
+                    <a href="{{ url_for('ai.assistant') }}" class="px-3 py-1.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-colors {{ 'bg-slate-800 text-cyan-400 font-semibold' if request.endpoint == 'ai.assistant' }}">
+                        <i class="fas fa-wand-magic-sparkles mr-1.5 text-xs text-yellow-400"></i>AI Assistant
+                    </a>
+                </nav>
+                {% endif %}
+
+                <!-- Right Action Buttons -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- PWA Install Button -->
+                    <button type="button" onclick="triggerPwaInstall()" class="pwa-install-trigger px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                        <i class="fas fa-download text-xs"></i>
+                        <span>Install App</span>
+                    </button>
+
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" type="button" aria-label="Toggle dark mode" class="w-9 h-9 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 flex items-center justify-center transition-colors">
+                        <i id="themeIcon" class="fas fa-sun text-yellow-400 text-sm"></i>
+                    </button>
+
+                    {% if current_user.is_authenticated %}
+                        <!-- Notifications Bell -->
+                        <a href="{{ url_for('security.index') }}" class="relative w-9 h-9 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 flex items-center justify-center transition-colors">
+                            <i class="fas fa-bell text-slate-300 text-sm"></i>
+                            {% if unread_count > 0 %}
+                            <span class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 rounded-full text-[10px] font-bold text-white flex items-center justify-center">
+                                {{ unread_count }}
+                            </span>
+                            {% endif %}
+                        </a>
+
+                        <!-- User Profile Dropdown / Admin Link -->
+                        <div class="flex items-center gap-2">
+                            {% if current_user.is_admin %}
+                            <a href="{{ url_for('admin.index') }}" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-purple-900/60 border border-purple-500/40 text-purple-200 text-xs font-semibold rounded-md hover:bg-purple-800/60 transition-colors">
+                                <i class="fas fa-crown text-yellow-400 text-[10px]"></i>Admin Panel
+                            </a>
+                            {% endif %}
+                            {% if current_user.is_merchant %}
+                            <a href="{{ url_for('merchant.dashboard') }}" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-900/60 border border-emerald-500/40 text-emerald-200 text-xs font-semibold rounded-md hover:bg-emerald-800/60 transition-colors">
+                                <i class="fas fa-store text-emerald-400 text-[10px]"></i>Merchant
+                            </a>
+                            {% endif %}
+
+                            <a href="{{ url_for('security.index') }}" class="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-slate-600 transition-colors">
+                                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase">
+                                    {{ current_user.full_name[:2] }}
+                                </div>
+                                <span class="text-xs font-medium text-slate-200 hidden lg:inline">{{ current_user.full_name }}</span>
+                            </a>
+
+                            <a href="{{ url_for('auth.logout') }}" title="Secure Logout" class="w-9 h-9 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 text-red-400 flex items-center justify-center transition-colors">
+                                <i class="fas fa-right-from-bracket text-xs"></i>
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="text-sm font-medium text-slate-300 hover:text-white px-3 py-1.5 transition-colors">
+                            Sign In
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="btn-jaganpay text-sm flex items-center gap-1.5">
+                            <span>Get Started</span>
+                            <i class="fas fa-arrow-right text-xs"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- FLASH MESSAGES -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% set cat_colors = {
+                        'success': 'bg-emerald-950/80 border-emerald-500/50 text-emerald-200',
+                        'danger': 'bg-rose-950/80 border-rose-500/50 text-rose-200',
+                        'warning': 'bg-amber-950/80 border-amber-500/50 text-amber-200',
+                        'info': 'bg-blue-950/80 border-blue-500/50 text-blue-200'
+                    } %}
+                    <div class="auto-dismiss-alert flex items-center justify-between p-4 mb-3 rounded-xl border backdrop-blur-md {{ cat_colors.get(category, cat_colors['info']) }} shadow-lg">
+                        <div class="flex items-center gap-3">
+                            <i class="fas {{ 'fa-circle-check text-emerald-400' if category == 'success' else ('fa-triangle-exclamation text-rose-400' if category == 'danger' else 'fa-circle-info text-blue-400') }}"></i>
+                            <span class="text-sm font-medium">{{ message }}</span>
+                        </div>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- MAIN CONTENT INJECTION -->
+    <main class="flex-grow">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    {% if current_user.is_authenticated %}
+    <div class="mobile-bottom-nav">
+        <a href="{{ url_for('dashboard.index') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'dashboard.index' else 'text-slate-400' }}">
+            <i class="fas fa-wallet text-base mb-0.5"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ url_for('payments.send_money') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'payments.send_money' else 'text-slate-400' }}">
+            <i class="fas fa-paper-plane text-base mb-0.5"></i>
+            <span>Pay</span>
+        </a>
+        <a href="{{ url_for('payments.qr_payment') }}" class="flex flex-col items-center text-xs text-white">
+            <div class="w-10 h-10 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg border-2 border-slate-900">
+                <i class="fas fa-qrcode text-base"></i>
+            </div>
+            <span class="mt-0.5">Scan</span>
+        </a>
+        <a href="{{ url_for('transactions.history') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint.startswith('transactions.') else 'text-slate-400' }}">
+            <i class="fas fa-clock-rotate-left text-base mb-0.5"></i>
+            <span>History</span>
+        </a>
+        <a href="{{ url_for('security.index') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'security.index' else 'text-slate-400' }}">
+            <i class="fas fa-shield-halved text-base mb-0.5"></i>
+            <span>Security</span>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 mt-16 py-10 text-slate-400 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-bolt text-white text-sm"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white">JAGAN<span class="text-cyan-400">PAY</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        AI-Powered UPI Payment & Financial Automation Simulator. Smart. Secure. Simple.
+                    </p>
+                    <div class="text-[11px] text-amber-500/90 font-medium">
+                        ⚠️ Simulated Platform — No Real Money Involved
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Simulation Features</h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><a href="{{ url_for('payments.send_money') if current_user.is_authenticated else url_for('auth.login') }}" class="hover:text-cyan-400 transition-colors">Instant UPI Simulation</a></li>
+                        <li><a href="{{ url_for('payments.receive_money') if current_user.is_authenticated else url_for('auth.login') }}" class="hover:text-cyan-400 transition-colors">Dynamic QR Generation</a></li>
+                        <li><a href="{{ url_for('ai.assistant') if current_user.is_authenticated else url_for('auth.login') }}" class="hover:text-cyan-400 transition-colors">JaganPay AI Financial Engine</a></li>
+                        <li><a href="{{ url_for('analytics.index') if current_user.is_authenticated else url_for('auth.login') }}" class="hover:text-cyan-400 transition-colors">Simulated Spending Analytics</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Security & Architecture</h4>
+                    <ul class="space-y-2 text-xs">
+                        <li><span class="text-slate-500">Mandatory Salted SHA-256 OTP</span></li>
+                        <li><span class="text-slate-500">Simulated Risk Engine (0-100)</span></li>
+                        <li><span class="text-slate-500">Immutable Audit Trail</span></li>
+                        <li><span class="text-slate-500">n8n Event-Driven Webhooks</span></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-200 uppercase tracking-wider mb-3">Platform Health</h4>
+                    <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Environment</span>
+                            <span class="text-cyan-400 font-semibold">Demo Sandbox</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">Database</span>
+                            <span class="text-emerald-400 font-semibold flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>Online</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-400">AI Model</span>
+                            <span class="text-purple-400 font-semibold">Gemini 2.5 Flash</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+                <p>&copy; {{ current_year }} JaganPay Simulator. Built as an advanced fintech portfolio project.</p>
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('main.about') }}" class="hover:text-slate-300">About Platform</a>
+                    <a href="{{ url_for('main.health') }}" target="_blank" class="hover:text-slate-300">API Health</a>
+                    <a href="https://github.com" target="_blank" class="hover:text-slate-300"><i class="fab fa-github mr-1"></i>Portfolio Demo</a>
+                </div>
+        </div>
+    </footer>
+
+    <!-- FLOATING PWA INSTALL BANNER -->
+    <div id="pwaInstallBanner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-slate-900/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 shadow-2xl shadow-cyan-500/20 text-white hidden flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-lg shadow-md shrink-0">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div>
+                <h4 class="text-xs font-bold text-white">Install JaganPay App</h4>
+                <p class="text-[11px] text-slate-400">Add to home screen for fast 1-tap UPI simulation!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button type="button" onclick="triggerPwaInstall()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+                <i class="fas fa-download text-xs"></i> Install
+            </button>
+            <button type="button" onclick="dismissPwaBanner()" class="p-2 text-slate-400 hover:text-white text-xs cursor-pointer">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- IOS INSTALL GUIDE MODAL -->
+    <div id="iosInstallModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl mx-auto">
+                <i class="fas fa-arrow-up-from-bracket"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white">Install on iOS / Safari</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+                To install JaganPay on your iPhone or iPad:
+            </p>
+            <div class="space-y-2.5 text-xs text-left bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0">1</span>
+                    <span>Tap the <strong>Share</strong> button <i class="fas fa-arrow-up-from-bracket text-cyan-400 mx-1"></i> in the Safari toolbar</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0">2</span>
+                    <span>Scroll down and tap <strong>Add to Home Screen</strong></span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-5 h-5 rounded-full bg-cyan-500 text-slate-950 font-bold flex items-center justify-center text-[10px] shrink-0">3</span>
+                    <span>Tap <strong>Add</strong> in the top-right corner</span>
+                </div>
+            </div>
+            <button type="button" onclick="closeIosModal()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold cursor-pointer">
+                Got it
+            </button>
+        </div>
+    </div>
+
+    <!-- Core Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Send Demo Money — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto px-4 py-10">
+    <div class="glass-card p-8 shadow-2xl">
+        <div class="flex items-center gap-3 mb-6">
+            <a href="{{ url_for('dashboard.index') }}" class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 hover:text-white">
+                <i class="fas fa-arrow-left text-xs"></i>
+            </a>
+            <div>
+                <h2 class="text-xl font-bold text-white">Send Demo Money</h2>
+                <p class="text-xs text-slate-400">Transfer simulated funds to any demo UPI address</p>
+            </div>
+        </div>
+
+        {% if require_otp %}
+        <!-- SENSITIVE ACTION OTP ALERT -->
+        <div class="mb-6 p-4 rounded-xl bg-amber-950/60 border border-amber-500/40 text-amber-200 text-xs">
+            <div class="flex items-center gap-2 font-bold mb-1">
+                <i class="fas fa-shield-halved text-amber-400"></i>
+                Sensitive Transaction Verification Required
+            </div>
+            <p class="text-slate-300">
+                Transfers of ₹10,000 or greater require one-time security authentication. A verification code has been dispatched to your registered device.
+            </p>
+        </div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('payments.send_money') }}" id="sendForm" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <!-- Recipient UPI -->
+            <div>
+                <label for="receiver_upi" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Recipient Demo UPI ID
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                        <i class="fas fa-at text-sm"></i>
+                    </span>
+                    <input type="text" id="receiver_upi" name="receiver_upi" value="{{ prefill_upi or '' }}" required placeholder="e.g. demo@jaganpay or jagancafe@jaganpay" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-sm">
+                </div>
+            </div>
+
+            <!-- Amount -->
+            <div>
+                <label for="amount" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Amount (₹)
+                </label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-cyan-400 font-bold text-lg">
+                        ₹
+                    </span>
+                    <input type="number" step="0.01" min="1" id="amount" name="amount" value="{{ prefill_amount or '' }}" required placeholder="0.00" oninput="updateFeeBreakdown()" class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900/90 border border-slate-700 text-white font-semibold text-lg placeholder-slate-600 focus:outline-none focus:border-cyan-400">
+                </div>
+            </div>
+
+            <!-- Category & Account Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="category" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Category</label>
+                    <select id="category" name="category" class="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400">
+                        {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="account_id" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Debiting Account</label>
+                    <select id="account_id" name="account_id" class="w-full py-2.5 px-3 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400">
+                        {% for acc in accounts %}
+                        <option value="{{ acc.id }}">{{ acc.bank_name }} ({{ format_currency(acc.demo_balance) }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Payment Note (Optional)</label>
+                <input type="text" id="description" name="description" value="{{ prefill_desc or '' }}" placeholder="What is this for?" class="w-full px-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-sm">
+            </div>
+
+            <!-- Simulated Fee Breakdown Card -->
+            <div class="p-3.5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span>Simulated Transfer Amount:</span>
+                    <span id="subtotalVal" class="font-medium text-slate-200">₹0.00</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-400">
+                    <span>Transaction Platform Fee:</span>
+                    <span class="text-emerald-400 font-medium">₹0.00 (Demo Free)</span>
+                </div>
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between font-bold text-slate-100">
+                    <span>Total Debit:</span>
+                    <span id="totalVal" class="text-cyan-400 text-sm">₹0.00</span>
+                </div>
+            </div>
+
+            <!-- Demo PIN -->
+            <div>
+                <label for="demo_pin" class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Demo UPI PIN <span class="text-slate-500 font-normal">(Default: 1234)</span>
+                </label>
+                <input type="password" maxlength="6" id="demo_pin" name="demo_pin" required placeholder="••••" class="w-full text-center text-xl tracking-[0.4em] font-mono py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-white focus:outline-none focus:border-cyan-400">
+            </div>
+
+            {% if require_otp %}
+            <!-- Sensitive Action OTP input -->
+            <div>
+                <label for="otpField" class="block text-xs font-semibold text-amber-300 uppercase tracking-wider mb-1">
+                    Security OTP Code
+                </label>
+                <input type="text" maxlength="6" id="otpField" name="otp" required placeholder="000000" class="w-full text-center text-xl tracking-[0.4em] font-mono py-2 rounded-xl bg-slate-900/90 border border-amber-500/50 text-amber-300 focus:outline-none focus:border-amber-400">
+            </div>
+            {% endif %}
+
+            <button type="submit" class="w-full btn-jaganpay py-3 text-sm flex items-center justify-center gap-2 mt-4">
+                <span>Confirm & Send Demo Money</span>
+                <i class="fas fa-check-circle text-xs"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateFeeBreakdown() {
+    const val = parseFloat(document.getElementById('amount').value) || 0;
+    const formatted = '₹' + val.toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.getElementById('subtotalVal').innerText = formatted;
+    document.getElementById('totalVal').innerText = formatted;
+}
+updateFeeBreakdown();
+</script>
+{% endblock %}

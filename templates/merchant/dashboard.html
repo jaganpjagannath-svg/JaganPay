@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant Dashboard — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="text-2xl font-bold text-white">{{ merchant.business_name }}</h1>
+                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">VERIFIED MERCHANT</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+                Merchant Code: <strong class="font-mono text-cyan-400">{{ merchant.merchant_code }}</strong> &bull; Category: {{ merchant.category }}
+            </p>
+        </div>
+
+        <div class="p-2 px-3 rounded-xl bg-slate-900 border border-slate-700 flex items-center gap-2">
+            <span class="text-xs text-slate-400">Store UPI:</span>
+            <span class="font-mono font-bold text-xs text-cyan-400">{{ merchant.demo_upi_id }}</span>
+            <button type="button" onclick="copyToClipboard('{{ merchant.demo_upi_id }}', 'Store UPI Copied!')" class="text-slate-400 hover:text-white text-xs">
+                <i class="fas fa-copy"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card p-6">
+            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Total Sales Volume</div>
+            <div class="text-3xl font-black text-emerald-400 mt-1">{{ format_currency(total_sales) }}</div>
+            <div class="text-[11px] text-slate-500 mt-1">{{ sales_count }} successful payments received</div>
+        </div>
+
+        <div class="glass-card p-6">
+            <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Today's Sales</div>
+            <div class="text-3xl font-black text-white mt-1">{{ format_currency(today_sales) }}</div>
+            <div class="text-[11px] text-slate-500 mt-1">Midnight to current timestamp</div>
+        </div>
+
+        <div class="glass-card p-6 flex items-center justify-between">
+            <div>
+                <div class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Store Location</div>
+                <div class="text-sm font-bold text-white mt-1">{{ merchant.location }}</div>
+                <div class="text-[11px] text-slate-500 mt-1">Status: {{ merchant.status }}</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xl">
+                <i class="fas fa-store"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store QR & Refund Simulation Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Store Counter QR Standee -->
+        <div class="glass-card p-6 text-center lg:col-span-1">
+            <h3 class="text-sm font-bold text-white mb-2">Store Checkout QR Standee</h3>
+            <p class="text-xs text-slate-400 mb-4">Customers scan this code to pay at your counter</p>
+
+            <div class="bg-white p-4 rounded-2xl inline-block shadow-xl border border-slate-200 mb-4">
+                <img src="{{ qr_code_base64 }}" alt="Merchant QR" class="w-48 h-48 mx-auto object-contain">
+                <div class="text-[11px] font-bold text-slate-900 mt-2 tracking-wider uppercase">
+                    {{ merchant.business_name }}
+                </div>
+            </div>
+
+            <button type="button" onclick="window.print()" class="btn-jaganpay-outline text-xs w-full py-2 flex items-center justify-center gap-1.5">
+                <i class="fas fa-print"></i>
+                <span>Print Standee</span>
+            </button>
+        </div>
+
+        <!-- Recent Customer Payments & Refund Tool -->
+        <div class="space-y-6 lg:col-span-2">
+            <!-- Simulated Refund Tool -->
+            <div class="glass-card p-6">
+                <h3 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                    <i class="fas fa-rotate-left text-amber-400"></i>
+                    Simulate Customer Refund
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">Enter a valid transaction reference to issue a simulated instant refund.</p>
+
+                <form method="POST" action="{{ url_for('merchant.simulate_refund') }}" class="flex gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="text" name="reference_no" required placeholder="e.g. JGP202609110001" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-xs font-mono focus:outline-none focus:border-amber-400">
+                    <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl whitespace-nowrap">
+                        Process Refund
+                    </button>
+                </form>
+            </div>
+
+            <!-- Customer Transactions Table -->
+            <div class="glass-card p-6">
+                <h3 class="text-sm font-bold text-white mb-4">Customer Payments Received</h3>
+                {% if payments %}
+                <div class="divide-y divide-slate-800">
+                    {% for p in payments %}
+                    <div class="py-3 flex items-center justify-between text-xs">
+                        <div>
+                            <div class="font-bold text-white font-mono">{{ p.reference_no }}</div>
+                            <div class="text-[11px] text-slate-400 mt-0.5">
+                                Customer: {{ p.sender_upi }} &bull; {{ p.created_at.strftime('%b %d, %H:%M') }}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-emerald-400 text-sm">+{{ format_currency(p.amount) }}</div>
+                            <span class="text-[10px] uppercase font-bold {{ 'text-emerald-400' if p.status == 'SUCCESS' else 'text-rose-400' }}">
+                                {{ p.status }}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-slate-500 text-center py-6">No merchant payments received yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

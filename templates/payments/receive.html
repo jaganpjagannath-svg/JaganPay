@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Receive Demo Money & QR Code — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto px-4 py-10">
+    <div class="glass-card p-8 shadow-2xl text-center">
+        <h2 class="text-xl font-bold text-white mb-1">Receive Demo Money</h2>
+        <p class="text-xs text-slate-400 mb-6">Scan with JaganPay or any simulated UPI scanner</p>
+
+        <!-- QR Code Display Card -->
+        <div class="bg-white p-6 rounded-2xl inline-block shadow-xl mb-4 border border-slate-200">
+            <img src="{{ qr_code_base64 }}" alt="Simulated UPI QR Code" class="w-56 h-56 mx-auto object-contain">
+            <div class="text-[11px] font-bold text-slate-900 mt-2 tracking-wider uppercase">
+                JaganPay Demo QR
+            </div>
+        </div>
+
+        <div class="text-xs text-slate-400 mb-4 font-medium">
+            Scan this QR to send demo money.
+        </div>
+
+        <!-- User UPI ID Card with Copy -->
+        <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-700 flex items-center justify-between gap-2 mb-6">
+            <div class="text-left">
+                <div class="text-[10px] text-slate-500 uppercase font-semibold">Your Demo UPI ID</div>
+                <div class="text-sm font-mono font-bold text-cyan-400">{{ upi_id }}</div>
+            </div>
+            <button type="button" onclick="copyToClipboard('{{ upi_id }}', 'UPI ID copied!')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-600 transition-colors flex items-center gap-1.5">
+                <i class="fas fa-copy text-xs"></i>
+                <span>Copy</span>
+            </button>
+        </div>
+
+        <!-- Generate Custom Amount QR -->
+        <div class="pt-5 border-t border-slate-800 text-left">
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
+                Request Specific Amount
+            </h3>
+            <form method="GET" action="{{ url_for('payments.receive_money') }}" class="flex gap-2">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-cyan-400 font-bold text-xs">₹</span>
+                    <input type="number" step="1" min="1" name="amount" value="{{ amount or '' }}" placeholder="Enter amount" class="w-full pl-7 pr-3 py-2 rounded-xl bg-slate-900/90 border border-slate-700 text-white text-xs focus:outline-none focus:border-cyan-400">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-colors">
+                    Update QR
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

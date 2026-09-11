@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - Payment Success Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-payment-success",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Payment Success Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const data = items[0].json.body.data || items[0].json.body;\nreturn [{\n  json: {\n    referenceNo: data.reference_no,\n    sender: data.sender_email,\n    receiverUpi: data.receiver_upi,\n    amount: data.amount,\n    category: data.category,\n    riskScore: data.risk_score,\n    formattedReceipt: `JaganPay Simulated Transfer of ₹${data.amount} to ${data.receiver_upi} (Ref: ${data.reference_no})`\n  }\n}];"
+      },
+      "name": "Format Payment Receipt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "notificationStatus",
+              "value": "SENT"
+            },
+            {
+              "name": "auditLogged",
+              "value": "TRUE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Confirm Delivery",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Payment Success Trigger": {
+      "main": [
+        [
+          {
+            "node": "Format Payment Receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Payment Receipt": {
+      "main": [
+        [
+          {
+            "node": "Confirm Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "name": "JaganPay - High Risk Transaction Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-risk-alert",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Risk Alert Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const alert = items[0].json.body.data || items[0].json.body;\nreturn [{\n  json: {\n    transactionId: alert.transaction_id,\n    referenceNo: alert.reference_no,\n    userEmail: alert.user_email,\n    amount: alert.amount,\n    riskScore: alert.risk_score,\n    factors: alert.factors || [],\n    thresholdPassed: alert.risk_score >= 65,\n    alertLevel: alert.risk_score >= 65 ? 'CRITICAL_HIGH' : 'WARNING_MEDIUM'\n  }\n}];"
+      },
+      "name": "Evaluate Risk Threshold",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "adminNotified",
+              "value": "TRUE"
+            },
+            {
+              "name": "securityIncidentCreated",
+              "value": "TRUE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Notify Security Admin",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Risk Alert Trigger": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Risk Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Risk Threshold": {
+      "main": [
+        [
+          {
+            "node": "Notify Security Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

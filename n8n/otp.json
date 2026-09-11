@@ -1,0 +1,68 @@
+{
+  "name": "JaganPay - OTP Notification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "jaganpay-otp",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "OTP Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = items[0].json.body;\nreturn [{\n  json: {\n    userId: payload.user_id,\n    recipientEmail: payload.email,\n    purpose: payload.purpose,\n    deliveryChannel: 'SIMULATED_EMAIL',\n    timestamp: payload.timestamp || new Date().toISOString(),\n    deliveryStatus: 'SUCCESS'\n  }\n}];"
+      },
+      "name": "Process OTP Dispatch",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": false,
+        "values": {
+          "string": [
+            {
+              "name": "auditAction",
+              "value": "N8N_OTP_DISPATCHED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Audit OTP Delivery",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "OTP Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Process OTP Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process OTP Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Audit OTP Delivery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

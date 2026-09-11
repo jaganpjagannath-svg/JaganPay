@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History — JaganPay Simulator{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Transaction History</h1>
+            <p class="text-xs text-slate-400">All simulated digital payments, refunds, and receipts</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ url_for('payments.send_money') }}" class="btn-jaganpay text-xs flex items-center gap-1.5 py-2">
+                <i class="fas fa-paper-plane text-xs"></i>
+                <span>Send Money</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="glass-card p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <!-- Search Input -->
+        <form method="GET" action="{{ url_for('transactions.history') }}" class="w-full md:w-80 flex items-center relative">
+            <input type="hidden" name="filter" value="{{ current_filter }}"/>
+            <span class="absolute left-3 text-slate-500 text-xs">
+                <i class="fas fa-search"></i>
+            </span>
+            <input type="text" name="q" value="{{ search_q or '' }}" placeholder="Search by ref, UPI ID, or note..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400">
+        </form>
+
+        <!-- Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            {% set filters = [('all', 'All'), ('sent', 'Sent'), ('received', 'Received'), ('merchant', 'Merchant'), ('qr', 'QR'), ('success', 'Success'), ('failed', 'Failed')] %}
+            {% for f_key, f_label in filters %}
+            <a href="{{ url_for('transactions.history', filter=f_key, q=search_q) }}" class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors {{ 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/40' if current_filter == f_key else 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white' }}">
+                {{ f_label }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="glass-card overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
+                    <tr>
+                        <th class="py-3 px-4">Transaction Ref</th>
+                        <th class="py-3 px-4">Party</th>
+                        <th class="py-3 px-4">Type / Category</th>
+                        <th class="py-3 px-4">Date & Time</th>
+                        <th class="py-3 px-4 text-right">Amount</th>
+                        <th class="py-3 px-4 text-center">Status</th>
+                        <th class="py-3 px-4 text-center">Receipt</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                    {% if transactions %}
+                        {% for t in transactions %}
+                        <tr class="hover:bg-slate-900/40 transition-colors">
+                            <td class="py-3 px-4 font-mono font-bold text-white">
+                                <a href="{{ url_for('transactions.detail', txn_id=t.id) }}" class="text-cyan-400 hover:underline">
+                                    {{ t.reference_no }}
+                                </a>
+                            </td>
+                            <td class="py-3 px-4">
+                                <div class="font-semibold text-white">
+                                    {{ t.receiver_upi if t.sender_id == current_user.id else t.sender_upi }}
+                                </div>
+                                <div class="text-[10px] text-slate-500">
+                                    {{ 'Sent to' if t.sender_id == current_user.id else 'Received from' }}
+                                </div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px] text-slate-300">
+                                    {{ t.type }}
+                                </span>
+                                <span class="text-[10px] text-slate-500 ml-1">{{ t.category }}</span>
+                            </td>
+                            <td class="py-3 px-4 text-slate-400">
+                                {{ t.created_at.strftime('%d %b %Y, %H:%M') }}
+                            </td>
+                            <td class="py-3 px-4 text-right font-bold text-sm {{ 'text-rose-400' if t.sender_id == current_user.id else 'text-emerald-400' }}">
+                                {{ '-' if t.sender_id == current_user.id else '+' }}{{ format_currency(t.amount) }}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                {% if t.status == 'SUCCESS' %}
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">SUCCESS</span>
+                                {% elif t.status == 'FAILED' %}
+                                <span class="px-2 py-0.5 rounded-full bg-rose-950/80 text-rose-400 border border-rose-500/30 text-[10px] font-bold">FAILED</span>
+                                {% elif t.status == 'REFUNDED' %}
+                                <span class="px-2 py-0.5 rounded-full bg-blue-950/80 text-blue-400 border border-blue-500/30 text-[10px] font-bold">REFUNDED</span>
+                                {% else %}
+                                <span class="px-2 py-0.5 rounded-full bg-amber-950/80 text-amber-400 border border-amber-500/30 text-[10px] font-bold">{{ t.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                <a href="{{ url_for('transactions.receipt', txn_id=t.id) }}" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors" title="View Digital Receipt">
+                                    <i class="fas fa-receipt text-xs"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-slate-500">
+                                <i class="fas fa-filter text-2xl text-slate-600 mb-2 block"></i>
+                                No transactions matched the selected criteria.
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="py-3 px-4 bg-slate-900/60 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+            <div>
+                Showing page {{ pagination.page }} of {{ pagination.pages }}
+            </div>
+            <div class="flex items-center gap-1.5">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('transactions.history', page=pagination.prev_num, filter=current_filter, q=search_q) }}" class="px-3 py-1 rounded bg-slate-800 text-white hover:bg-slate-700">
+                    &larr; Prev
+                </a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('transactions.history', page=pagination.next_num, filter=current_filter, q=search_q) }}" class="px-3 py-1 rounded bg-slate-800 text-white hover:bg-slate-700">
+                    Next &rarr;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

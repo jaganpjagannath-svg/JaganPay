@@ -1,3 +1,4 @@
+# Core Web Framework
 Flask>=3.0.0
 Flask-SQLAlchemy>=3.1.1
 Flask-Login>=0.6.3
@@ -7,8 +8,16 @@ Flask-Limiter>=3.5.0
 email-validator>=2.1.0
 python-dotenv>=1.0.1
 requests>=2.31.0
+
+# QR Code & Image Processing
 qrcode[pil]>=7.4.2
 Pillow>=10.2.0
+
+# Production WSGI Server (Render / Railway / Heroku / Linux)
 gunicorn>=21.2.0
-pytest>=8.0.0
+
+# AI & Automation
 google-genai>=0.1.1
+
+# Testing
+pytest>=8.0.0

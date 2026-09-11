@@ -58,9 +58,7 @@
                 <!-- Brand Logo -->
                 <div class="flex items-center gap-3">
                     <a href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('main.index') }}" class="flex items-center gap-2 group">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-                            <i class="fas fa-bolt text-white text-lg"></i>
-                        </div>
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="JaganPay Logo" class="w-10 h-10 rounded-xl shadow-lg shadow-cyan-500/25 group-hover:scale-105 transition-transform object-contain">
                         <div>
                             <span class="text-xl font-black tracking-tight text-white flex items-center gap-1">
                                 JAGAN<span class="text-cyan-400">PAY</span>
@@ -220,9 +218,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div class="space-y-3">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-purple-600 flex items-center justify-center">
-                            <i class="fas fa-bolt text-white text-sm"></i>
-                        </div>
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="JaganPay Logo" class="w-8 h-8 rounded-lg shadow-md object-contain">
                         <span class="text-lg font-bold text-white">JAGAN<span class="text-cyan-400">PAY</span></span>
                     </div>
                     <p class="text-xs text-slate-500">

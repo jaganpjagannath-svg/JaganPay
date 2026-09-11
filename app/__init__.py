@@ -135,3 +135,16 @@ def create_app(config_name="default"):
         db.create_all()
 
     return app
+
+
+# Lazy WSGI application fallback if WSGI servers invoke `gunicorn app:app`
+_default_app = None
+
+def __getattr__(name):
+    if name == "app":
+        global _default_app
+        if _default_app is None:
+            _default_app = create_app(os.environ.get("FLASK_ENV", "production"))
+        return _default_app
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+

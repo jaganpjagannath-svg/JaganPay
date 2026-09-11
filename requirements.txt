@@ -13,8 +13,9 @@ requests>=2.31.0
 qrcode[pil]>=7.4.2
 Pillow>=10.2.0
 
-# Production WSGI Server (Render / Railway / Heroku / Linux)
+# Production WSGI Server & Database (Render / Railway / Heroku / Linux)
 gunicorn>=21.2.0
+psycopg2-binary>=2.9.9
 
 # AI & Automation
 google-genai>=0.1.1

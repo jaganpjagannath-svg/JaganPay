@@ -1,8 +1,12 @@
 import abc
+import json
 import logging
+import os
+import re
 import secrets
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from flask import current_app
 from app.extensions import db
 from app.models.otp import OTPChallenge, OTPPurpose, OTPChannel
@@ -13,30 +17,88 @@ from app.utils.helpers import mask_phone, mask_email
 
 logger = logging.getLogger("jaganpay.otp")
 
-
-# =====================================================================
-# PROVIDER INTERFACES & IMPLEMENTATIONS
-# =====================================================================
-
-# In-memory storage for virtual phone simulator in development mode
+# In-memory and disk-backed storage for virtual phone simulator in development mode
 _simulated_sms_store: list[dict] = []
+_INSTANCE_DIR = Path(__file__).resolve().parent.parent.parent / "instance"
+_SMS_STORAGE_FILE = _INSTANCE_DIR / "simulated_sms.json"
+
+
+def _record_simulated_message(sender: str, recipient: str, raw_otp: str | None, message: str):
+    """Store simulated SMS/Email in memory and persist to instance disk for multi-worker sync."""
+    item = {
+        "sender": sender,
+        "recipient": recipient,
+        "raw_otp": raw_otp,
+        "message": message,
+        "time": datetime.utcnow().strftime("%I:%M %p"),
+        "timestamp": datetime.utcnow().isoformat(),
+    }
+    _simulated_sms_store.append(item)
+    if len(_simulated_sms_store) > 30:
+        _simulated_sms_store.pop(0)
+
+    try:
+        _INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
+        disk_items = []
+        if _SMS_STORAGE_FILE.exists():
+            try:
+                with open(_SMS_STORAGE_FILE, "r", encoding="utf-8") as f:
+                    disk_items = json.load(f)
+            except Exception:
+                disk_items = []
+        disk_items.append(item)
+        if len(disk_items) > 30:
+            disk_items = disk_items[-30:]
+        with open(_SMS_STORAGE_FILE, "w", encoding="utf-8") as f:
+            json.dump(disk_items, f)
+    except Exception as e:
+        logger.debug(f"Could not persist simulated message to disk: {e}")
+
+
+def _load_disk_messages() -> list[dict]:
+    try:
+        if _SMS_STORAGE_FILE.exists():
+            with open(_SMS_STORAGE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return []
 
 
 def get_latest_mock_sms(identifier: str | None = None) -> dict | None:
     """Retrieve the latest mock SMS for virtual phone simulator in frontend."""
-    if not _simulated_sms_store:
+    all_msgs = list(_simulated_sms_store)
+    # Merge with disk messages if memory doesn't have it (multi-worker sync)
+    disk_msgs = _load_disk_messages()
+    for d in disk_msgs:
+        if not any(m.get("raw_otp") == d.get("raw_otp") and m.get("recipient") == d.get("recipient") for m in all_msgs):
+            all_msgs.append(d)
+
+    if not all_msgs:
         return None
+
     if identifier:
         clean = identifier.strip().lower() if "@" in identifier else identifier.strip()
-        for item in reversed(_simulated_sms_store):
-            if item.get("recipient") == clean or item.get("recipient") == identifier:
+        clean_digits = re.sub(r"\D", "", identifier)[-10:] if not "@" in identifier else ""
+        for item in reversed(all_msgs):
+            rec = item.get("recipient", "")
+            rec_clean = rec.strip().lower() if "@" in rec else rec.strip()
+            if rec_clean == clean or rec == identifier:
                 return item
-    return _simulated_sms_store[-1]
+            if clean_digits and re.sub(r"\D", "", rec)[-10:] == clean_digits:
+                return item
+
+    return all_msgs[-1]
 
 
 def get_all_mock_sms(limit: int = 10) -> list[dict]:
     """Retrieve recent simulated SMS messages for the virtual inbox."""
-    return list(reversed(_simulated_sms_store[-limit:]))
+    all_msgs = list(_simulated_sms_store)
+    for d in _load_disk_messages():
+        if not any(m.get("raw_otp") == d.get("raw_otp") for m in all_msgs):
+            all_msgs.append(d)
+    return list(reversed(all_msgs[-limit:]))
+
 
 
 class BaseSMSProvider(abc.ABC):
@@ -66,18 +128,8 @@ Valid for: 5 minutes
         sys.stdout.flush()
         logger.info(f"[MOCK SMS] Simulated SMS sent to {mask_phone(to_phone)}")
 
-        # Store for virtual device preview in mock/demo mode
-        _simulated_sms_store.append({
-            "sender": "VM-JAGANP",
-            "recipient": to_phone,
-            "raw_otp": raw_otp,
-            "message": message,
-            "time": datetime.utcnow().strftime("%I:%M %p"),
-            "timestamp": datetime.utcnow().isoformat()
-        })
-        if len(_simulated_sms_store) > 30:
-            _simulated_sms_store.pop(0)
-
+        # Store for virtual device preview and autofill in mock/demo mode
+        _record_simulated_message("VM-JAGANP", to_phone, raw_otp, message)
         return True
 
 
@@ -104,7 +156,7 @@ class BaseEmailProvider(abc.ABC):
 class MockEmailProvider(BaseEmailProvider):
     """
     Mock Email Provider for Local Development.
-    Prints OTP to the server terminal only.
+    Prints OTP to the server terminal only and records for virtual device simulation.
     """
     def send_email(self, to_email: str, subject: str, html_body: str, text_body: str, raw_otp: str | None = None) -> bool:
         banner = f"""
@@ -119,6 +171,7 @@ Valid for: 5 minutes
         print(banner, file=sys.stdout)
         sys.stdout.flush()
         logger.info(f"[MOCK EMAIL] Simulated email sent to {mask_email(to_email)}")
+        _record_simulated_message("VM-EMAIL", to_email, raw_otp, f"Your JaganPay verification code is {raw_otp}. Valid for 5 minutes.")
         return True
 
 

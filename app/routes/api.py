@@ -210,6 +210,16 @@ def api_get_simulated_sms():
 
     identifier = request.args.get("identifier", "").strip()
     latest = get_latest_mock_sms(identifier)
+    if not latest and session.get("demo_otp"):
+        code = session.get("demo_otp")
+        latest = {
+            "sender": "VM-JAGANP",
+            "recipient": identifier,
+            "raw_otp": code,
+            "message": f"Your JaganPay verification code is {code}. Valid for 5 minutes.",
+            "time": "Just now",
+        }
+
     if not latest:
         return jsonify({"success": False, "message": "No simulated SMS received yet."}), 404
 

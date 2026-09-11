@@ -6,6 +6,7 @@ from app.models.user import User, Role
 from app.models.otp import OTPPurpose, OTPChannel
 from app.models.bank_account import DemoBankAccount, UPIProfile, BankNames
 from app.services.auth_service import request_otp, verify_user_otp
+from app.services.otp_service import get_latest_mock_sms
 from app.services.audit_service import log_audit, log_security_event
 from app.services.webhook_service import dispatch_event
 from app.utils.validators import validate_email, validate_phone, validate_password_strength
@@ -105,6 +106,9 @@ def register():
 
         # Request initial mandatory OTP via SMS provider
         request_otp(user, purpose=OTPPurpose.REGISTRATION, channel=OTPChannel.SMS)
+        mock_sms = get_latest_mock_sms(user.phone or user.email)
+        if mock_sms:
+            session["demo_otp"] = mock_sms.get("raw_otp")
 
         # Dispatch registration webhook to n8n
         dispatch_event("REGISTRATION", {
@@ -140,6 +144,13 @@ def verify_otp():
         flash("User not found.", "danger")
         return redirect(url_for("auth.register"))
 
+    demo_otp = session.get("demo_otp")
+    if not demo_otp:
+        mock_sms = get_latest_mock_sms(user.phone or user.email)
+        if mock_sms:
+            demo_otp = mock_sms.get("raw_otp")
+            session["demo_otp"] = demo_otp
+
     if request.method == "POST":
         raw_code = request.form.get("otp", "").strip()
         # Fallback to concatenate individual digit inputs if submitted separately
@@ -148,18 +159,19 @@ def verify_otp():
 
         if not raw_code or len(raw_code) != 6:
             flash("Please enter a valid 6-digit OTP code.", "danger")
-            return render_template("auth/verify_otp.html", user=user)
+            return render_template("auth/verify_otp.html", user=user, demo_otp=demo_otp)
 
         success, msg = verify_user_otp(user, raw_code)
         if success:
             session.pop("pending_verification_user_id", None)
+            session.pop("demo_otp", None)
             login_user(user)
             flash("Account verified successfully! Welcome to JaganPay.", "success")
             return redirect(url_for("dashboard.index"))
         else:
             flash(msg, "danger")
 
-    return render_template("auth/verify_otp.html", user=user)
+    return render_template("auth/verify_otp.html", user=user, demo_otp=demo_otp)
 
 
 @auth_bp.route("/resend-otp", methods=["POST"])
@@ -180,6 +192,9 @@ def resend_otp():
 
     success, msg, _ = request_otp(user, purpose=OTPPurpose.REGISTRATION, channel=OTPChannel.SMS)
     if success:
+        mock_sms = get_latest_mock_sms(user.phone or user.email)
+        if mock_sms:
+            session["demo_otp"] = mock_sms.get("raw_otp")
         flash("A fresh verification code has been dispatched to your mobile number.", "success")
     else:
         flash(msg, "warning")
@@ -213,6 +228,9 @@ def login():
         if not user.is_verified:
             session["pending_verification_user_id"] = user.id
             request_otp(user, purpose=OTPPurpose.REGISTRATION)
+            mock_sms = get_latest_mock_sms(user.phone or user.email)
+            if mock_sms:
+                session["demo_otp"] = mock_sms.get("raw_otp")
             flash("Please verify your account OTP to proceed.", "info")
             return redirect(url_for("auth.verify_otp"))
 

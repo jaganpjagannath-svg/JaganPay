@@ -85,8 +85,9 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     ENV = "production"
-    SESSION_COOKIE_SECURE = True
-    OTP_PROVIDER_MODE = "production"
+    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "False").lower() in ("true", "1", "yes")
+    OTP_PROVIDER_MODE = os.environ.get("OTP_PROVIDER_MODE", "mock" if not os.environ.get("SMS_API_KEY") else "production")
+
 
 
 config_by_name = {

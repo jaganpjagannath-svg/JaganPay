@@ -182,8 +182,8 @@ def pay_utility():
         receiver_upi=receiver_upi,
         amount=amount,
         description=f"{utility_name} Payment #{consumer_id}",
-        category=SpendingCategory.UTILITIES,
-        txn_type=TransactionType.BILL,
+        category=SpendingCategory.BILLS,
+        txn_type=TransactionType.RECHARGE_SIMULATION,
     )
 
     if success:

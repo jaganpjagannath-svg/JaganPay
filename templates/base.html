@@ -33,6 +33,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Custom CSS -->
     <!-- PWA Manifest & App Icons -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- Chart.js CDN for Analytics & Native App Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- PWA Manifest & App Icons -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#0a0f24">
     <meta name="mobile-web-app-capable" content="yes">
@@ -41,18 +45,32 @@
     <meta name="apple-mobile-web-app-title" content="JaganPay">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192.png') }}">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+    <script>
+        // Automatic Native App Mode Detection
+        (function() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || localStorage.getItem('jaganpay_app_mode') === 'true';
+            if (isStandalone) {
+                document.documentElement.classList.add('app-mode');
+            }
+        })();
+        function toggleAppModePreview() {
+            const isApp = document.documentElement.classList.toggle('app-mode');
+            localStorage.setItem('jaganpay_app_mode', isApp ? 'true' : 'false');
+            showToast(isApp ? 'Switched to Native Mobile App Mode' : 'Switched to Full Desktop Mode', 'info');
+        }
+    </script>
     {% block head_extra %}{% endblock %}
 </head>
 <body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen">
 
-    <!-- DEMO DISCLAIMER BANNER -->
+    <!-- DEMO DISCLAIMER BANNER (Hidden in App Mode) -->
     <div class="demo-banner flex items-center justify-center gap-2 text-xs py-1.5 px-4 bg-indigo-950/80 border-b border-indigo-500/20 text-indigo-300 text-center">
         <i class="fas fa-shield-halved text-cyan-400"></i>
         <span><strong>DEMO SIMULATION MODE</strong> — NO REAL MONEY | All balances, accounts, and transactions are simulated for portfolio and educational demonstration.</span>
     </div>
 
-    <!-- MAIN NAVBAR -->
-    <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
+    <!-- MAIN DESKTOP NAVBAR (Hidden in App Mode / Mobile) -->
+    <header class="desktop-web-header sticky top-0 z-40 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Brand Logo -->
@@ -94,6 +112,12 @@
 
                 <!-- Right Action Buttons -->
                 <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Toggle App Mode Visualizer Button -->
+                    <button type="button" onclick="toggleAppModePreview()" title="Switch between Full Desktop View and Native Mobile App Mode" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/30 text-cyan-400 text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                        <i class="fas fa-mobile-screen text-xs"></i>
+                        <span>App Mode</span>
+                    </button>
+
                     <!-- PWA Install Button -->
                     <button type="button" onclick="triggerPwaInstall()" class="pwa-install-trigger px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer">
                         <i class="fas fa-download text-xs"></i>
@@ -154,6 +178,46 @@
         </div>
     </header>
 
+    <!-- NATIVE MOBILE APP TOP BAR (Active in App Mode & Mobile screens) -->
+    <header class="mobile-app-header">
+        <div class="flex items-center justify-between px-4 py-2.5">
+            <div class="flex items-center gap-2.5">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="JaganPay" class="w-8 h-8 rounded-xl shadow-md object-contain">
+                <div>
+                    <span class="text-base font-black tracking-tight text-white flex items-center">
+                        Jagan<span class="text-cyan-400">Pay</span>
+                    </span>
+                    <div class="flex items-center gap-1 -mt-0.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Simulator</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleAppModePreview()" title="Toggle Web/App Mode" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-400 flex items-center justify-center text-xs">
+                    <i class="fas fa-desktop"></i>
+                </button>
+                <button type="button" onclick="document.getElementById('themeToggle').click()" class="w-8 h-8 rounded-xl bg-slate-900/90 border border-slate-800 text-yellow-400 flex items-center justify-center text-xs">
+                    <i class="fas fa-sun"></i>
+                </button>
+                {% if current_user.is_authenticated %}
+                <a href="{{ url_for('security.index') }}" class="relative w-8 h-8 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-center text-slate-300 text-xs">
+                    <i class="fas fa-bell"></i>
+                    {% if unread_count > 0 %}
+                    <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500"></span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('security.index') }}" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase shadow-sm">
+                    {{ current_user.full_name[:2] }}
+                </a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="px-2.5 py-1 rounded-lg bg-cyan-500 text-slate-950 font-bold text-xs">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+
     <!-- FLASH MESSAGES -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -184,36 +248,41 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <!-- NATIVE MOBILE APP BOTTOM NAVIGATION BAR (Curved Cutout & Floating Scan Button) -->
     {% if current_user.is_authenticated %}
-    <div class="mobile-bottom-nav">
-        <a href="{{ url_for('dashboard.index') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'dashboard.index' else 'text-slate-400' }}">
-            <i class="fas fa-wallet text-base mb-0.5"></i>
-            <span>Home</span>
-        </a>
-        <a href="{{ url_for('payments.send_money') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'payments.send_money' else 'text-slate-400' }}">
-            <i class="fas fa-paper-plane text-base mb-0.5"></i>
-            <span>Pay</span>
-        </a>
-        <a href="{{ url_for('payments.qr_payment') }}" class="flex flex-col items-center text-xs text-white">
-            <div class="w-10 h-10 -mt-5 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg border-2 border-slate-900">
-                <i class="fas fa-qrcode text-base"></i>
+    <nav class="mobile-app-bottom-nav">
+        <div class="bottom-nav-inner">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard.index' and not request.args.get('tab') }}">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="{{ url_for('transactions.history') }}" class="nav-item {{ 'active' if request.endpoint.startswith('transactions.') }}">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>History</span>
+            </a>
+
+            <!-- Elevated Floating Center Circular Scan Button -->
+            <div class="floating-scan-wrapper">
+                <a href="{{ url_for('payments.qr_payment') }}" class="floating-scan-btn" title="Scan to Pay">
+                    <i class="fas fa-qrcode"></i>
+                </a>
+                <span class="scan-label">Scan to Pay</span>
             </div>
-            <span class="mt-0.5">Scan</span>
-        </a>
-        <a href="{{ url_for('transactions.history') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint.startswith('transactions.') else 'text-slate-400' }}">
-            <i class="fas fa-clock-rotate-left text-base mb-0.5"></i>
-            <span>History</span>
-        </a>
-        <a href="{{ url_for('security.index') }}" class="flex flex-col items-center text-xs {{ 'text-cyan-400 font-semibold' if request.endpoint == 'security.index' else 'text-slate-400' }}">
-            <i class="fas fa-shield-halved text-base mb-0.5"></i>
-            <span>Security</span>
-        </a>
-    </div>
+
+            <a href="{{ url_for('analytics.index') }}" class="nav-item {{ 'active' if request.endpoint == 'analytics.index' or request.args.get('tab') == 'analytics' }}">
+                <i class="fas fa-chart-pie"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="{{ url_for('security.index') }}" class="nav-item {{ 'active' if request.endpoint == 'security.index' }}">
+                <i class="fas fa-bars"></i>
+                <span>Menu</span>
+            </a>
+        </div>
+    </nav>
     {% endif %}
 
-    <!-- FOOTER -->
-    <footer class="bg-slate-950 border-t border-slate-800/80 mt-16 py-10 text-slate-400 text-sm">
+    <!-- FOOTER (Hidden in App Mode / Mobile screens) -->
+    <footer class="desktop-web-footer bg-slate-950 border-t border-slate-800/80 mt-16 py-10 text-slate-400 text-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
                 <div class="space-y-3">

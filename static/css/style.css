@@ -155,27 +155,361 @@ body {
 .receipt-cutout::before { left: -10px; }
 .receipt-cutout::after { right: -10px; }
 
-/* Mobile Bottom Navigation */
-.mobile-bottom-nav {
+/* ===================================================
+   MOBILE NATIVE APP & PWA STANDALONE STYLES
+   Inspired by native UPI & Fintech applications
+=================================================== */
+
+/* Hide mobile elements on desktop by default */
+.mobile-app-header {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 15, 36, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+}
+
+.mobile-app-bottom-nav {
     display: none;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: var(--bg-card);
-    backdrop-filter: blur(16px);
-    border-top: 1px solid var(--border-color);
     z-index: 1040;
-    padding: 0.5rem 0.75rem;
+    background: rgba(10, 15, 36, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(56, 189, 248, 0.18);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+    padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-@media (max-width: 768px) {
-    .mobile-bottom-nav {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
+.bottom-nav-inner {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
+    height: 64px;
+    padding: 0 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    flex: 1;
+    height: 100%;
+}
+
+.nav-item i {
+    font-size: 1.15rem;
+    margin-bottom: 3px;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.nav-item.active {
+    color: #38bdf8;
+    font-weight: 700;
+}
+
+.nav-item.active i {
+    color: #38bdf8;
+    transform: translateY(-2px);
+}
+
+/* Elevated Floating Center Scan Button */
+.floating-scan-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    margin-top: -24px;
+}
+
+.floating-scan-btn {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #7c3aed 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45);
+    border: 3.5px solid #0a0f24;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+}
+
+.floating-scan-btn:hover {
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 12px 30px rgba(6, 182, 212, 0.6);
+}
+
+.floating-scan-btn:active {
+    transform: scale(0.92);
+}
+
+.scan-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-top: 3px;
+    letter-spacing: 0.02em;
+}
+
+/* Smartphone Mockup Frame (For Desktop Visualizer Mode) */
+.phone-mockup-frame {
+    width: 100%;
+    max-width: 380px;
+    height: 780px;
+    background: #0a0f24;
+    border: 12px solid #1e293b;
+    border-radius: 48px;
+    box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.phone-speaker-notch {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90px;
+    height: 20px;
+    background: #0f172a;
+    border-radius: 12px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.phone-speaker-notch::after {
+    content: "";
+    width: 38px;
+    height: 4px;
+    background: #334155;
+    border-radius: 2px;
+}
+
+.phone-speaker-notch::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 50%;
+}
+
+.phone-screen-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-top: 36px;
+    padding-bottom: 75px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Quick Action Squircles */
+.action-squircle {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 1.25rem;
+    padding: 0.85rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.25s ease;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.action-squircle:hover {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(56, 189, 248, 0.45);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+}
+
+.action-squircle:active {
+    transform: scale(0.96);
+}
+
+.action-squircle-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15);
+}
+
+/* Native Radar Map Pulse Animation */
+@keyframes radar-pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7);
     }
-    body {
-        padding-bottom: 75px;
+    70% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 16px rgba(6, 182, 212, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(6, 182, 212, 0);
     }
 }
+
+.radar-pin {
+    animation: radar-pulse 2s infinite;
+}
+
+/* ===================================================
+   RESPONSIVE & APP-MODE SWITCHING
+=================================================== */
+
+@media (max-width: 768px), (display-mode: standalone) {
+    .desktop-web-header {
+        display: none !important;
+    }
+    .demo-banner {
+        display: none !important;
+    }
+    .desktop-web-footer {
+        display: none !important;
+    }
+    .mobile-app-header {
+        display: block !important;
+    }
+    .mobile-app-bottom-nav {
+        display: block !important;
+    }
+    body {
+        padding-bottom: 76px !important;
+        background-color: #070b19;
+    }
+    .app-viewport-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1rem !important;
+    }
+}
+
+/* Class-triggered app mode for manual preview */
+html.app-mode .desktop-web-header {
+    display: none !important;
+}
+html.app-mode .demo-banner {
+    display: none !important;
+}
+html.app-mode .desktop-web-footer {
+    display: none !important;
+}
+html.app-mode .mobile-app-header {
+    display: block !important;
+}
+html.app-mode .mobile-app-bottom-nav {
+    display: block !important;
+}
+html.app-mode body {
+    padding-bottom: 76px !important;
+}
+
+/* ===================================================
+   HERO WALLET CARD & RADAR VISUALIZER
+=================================================== */
+
+.wallet-hero-card {
+    background: linear-gradient(135deg, #08112d 0%, #172554 45%, #0f172a 100%);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+}
+
+.wallet-hero-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.18) 0%, rgba(59, 130, 246, 0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.wallet-hero-waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 70px;
+    opacity: 0.18;
+    pointer-events: none;
+    background: radial-gradient(ellipse at bottom, rgba(56, 189, 248, 0.4) 0%, transparent 70%);
+}
+
+.radar-map-box {
+    background: radial-gradient(circle at center, #0e1e38 0%, #070e1c 85%);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    border-radius: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.radar-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px dashed rgba(56, 189, 248, 0.25);
+    pointer-events: none;
+}
+
+.radar-ring-1 { width: 60px; height: 60px; }
+.radar-ring-2 { width: 120px; height: 120px; }
+.radar-ring-3 { width: 180px; height: 180px; }
+
+.screen-switcher-tab {
+    transition: all 0.2s ease-in-out;
+}
+
+.screen-switcher-tab.active {
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+.phone-dual-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+

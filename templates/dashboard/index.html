@@ -2,232 +2,1102 @@
 
 {% block title %}Dashboard — JaganPay Simulator{% endblock %}
 
-{% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+{% block head_extra %}
+<!-- Chart.js for Native Fintech Visualizations -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
 
-    <!-- 1. TOP GREETING & UPI ID BAR -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-white">
-                {{ greeting }}, <span class="text-gradient">{{ user.full_name }}</span> 👋
-            </h1>
-            <div class="flex items-center gap-2 mt-1.5">
-                <span class="text-xs text-slate-400">Demo UPI ID:</span>
-                <span class="text-xs font-mono font-bold text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                    {{ user.primary_upi }}
-                </span>
-                <button type="button" onclick="copyToClipboard('{{ user.primary_upi }}', 'UPI ID copied!')" title="Copy UPI ID" class="text-slate-400 hover:text-white text-xs">
-                    <i class="fas fa-copy"></i>
-                </button>
-            </div>
+{% block content %}
+<div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
+
+    <!-- ================================================================= -->
+    <!-- TOP SEGMENTED VIEW SWITCHER                                       -->
+    <!-- Switch between Screen 1 (Home), Screen 2 (Stats), and Dual Phone  -->
+    <!-- ================================================================= -->
+    <div class="flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+        <!-- Segmented Tab Pills -->
+        <div class="inline-flex p-1 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-inner max-w-full overflow-x-auto">
+            <button type="button" id="tabBtnHome" onclick="switchAppView('home')" 
+                    class="screen-switcher-tab active px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all">
+                <i class="fas fa-house text-cyan-400"></i>
+                <span>Home / Wallet</span>
+            </button>
+            <button type="button" id="tabBtnStats" onclick="switchAppView('stats')" 
+                    class="screen-switcher-tab px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 transition-all">
+                <i class="fas fa-chart-simple text-purple-400"></i>
+                <span>Stats & Analytics</span>
+            </button>
+            <button type="button" id="tabBtnDual" onclick="switchAppView('dual')" 
+                    class="hidden md:inline-flex screen-switcher-tab px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white items-center gap-1.5 transition-all">
+                <i class="fas fa-mobile-screen text-emerald-400"></i>
+                <span>Dual Phone Visualizer</span>
+            </button>
         </div>
 
+        <!-- Quick Demo Funds & Status Pill -->
         <div class="flex items-center gap-2">
-            <span class="px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                Active Simulator Account
+            <button type="button" onclick="openAddMoneyModal()" 
+                    class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold transition-all shadow-sm">
+                <i class="fas fa-plus text-[10px]"></i>
+                <span>Add Demo Money</span>
+            </button>
+            <span class="px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-[11px] font-semibold flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Active Simulator
             </span>
         </div>
     </div>
 
-    <!-- 2. BALANCE & QUICK ACTION TILES -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Main Demo Balance Card -->
-        <div class="glass-card p-6 relative overflow-hidden bg-gradient-to-br from-slate-900/90 via-indigo-950/40 to-slate-900/90 border-indigo-500/30">
-            <div class="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider font-semibold mb-2">
-                <span>Total Simulated Balance</span>
-                <span class="text-[10px] bg-indigo-900/80 text-indigo-300 px-2 py-0.5 rounded-full font-bold">DEMO ONLY</span>
-            </div>
-            <div class="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
-                {{ format_currency(user.total_demo_balance) }}
-            </div>
+    <!-- ================================================================= -->
+    <!-- VIEW CONTAINER 1: NATIVE SINGLE VIEW (Active by default)         -->
+    <!-- Mobile & PWA users switch seamlessly between Home & Stats         -->
+    <!-- ================================================================= -->
+    <div id="singleViewContainer" class="space-y-6">
 
-            <!-- Primary Linked Bank Account Summary -->
-            {% if primary_acc %}
-            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 rounded-md bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs">
-                        <i class="fas fa-building-columns"></i>
+        <!-- ============================================================= -->
+        <!-- SCREEN 1: HOME & WALLET TAB                                  -->
+        <!-- Matches Screen 1 in uploaded screenshot (Hero Card, Squircles,-->
+        <!-- Merchant Radar Map, Utilities, Recent Txns)                  -->
+        <!-- ============================================================= -->
+        <div id="screenHome" class="space-y-6">
+
+            <!-- 1. HERO WALLET CARD (Deep Navy, Chip, Waves, Balance Mask) -->
+            <div class="wallet-hero-card p-6 text-white relative">
+                <div class="wallet-hero-waves"></div>
+
+                <!-- Top Row: Microchip, Contactless Wave & Tag -->
+                <div class="flex items-center justify-between mb-4 relative z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-7 rounded bg-gradient-to-r from-amber-500 to-amber-300 border border-amber-200/50 flex items-center justify-center shadow-md">
+                            <i class="fas fa-microchip text-slate-900 text-sm"></i>
+                        </div>
+                        <i class="fas fa-wifi fa-rotate-90 text-slate-400 text-xs"></i>
                     </div>
-                    <div>
-                        <div class="font-semibold text-slate-200">{{ primary_acc.bank_name }}</div>
-                        <div class="text-[11px] text-slate-500">{{ primary_acc.account_number_masked }}</div>
+                    <div class="text-[11px] font-semibold text-cyan-300/80 bg-cyan-950/60 px-2.5 py-0.5 rounded-full border border-cyan-500/20">
+                        JaganPay Primary Wallet
                     </div>
                 </div>
-                <div class="text-right">
-                    <div class="text-[11px] text-slate-400">Account Balance</div>
-                    <div class="font-bold text-slate-200">{{ format_currency(primary_acc.demo_balance) }}</div>
+
+                <!-- Welcome Greeting & Balance Header -->
+                <div class="relative z-10">
+                    <div class="text-xs text-slate-300 font-medium">
+                        Welcome back, <span class="font-bold text-white">{{ user.full_name }}</span> 👋
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="text-xs uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                            <i class="fas fa-wallet text-cyan-400 text-xs"></i>
+                            <span>Wallet Balance</span>
+                            <button type="button" onclick="toggleBalanceMask()" title="Toggle balance visibility" class="ml-1 text-slate-400 hover:text-white transition-colors">
+                                <i id="balanceEyeIcon" class="fas fa-eye text-xs"></i>
+                            </button>
+                        </div>
+                        <button type="button" onclick="openAddMoneyModal()" class="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1">
+                            <i class="fas fa-circle-plus text-[10px]"></i>
+                            <span>Top Up Demo</span>
+                        </button>
+                    </div>
+
+                    <!-- Bold Large Amount -->
+                    <div class="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mt-1.5">
+                        <span id="heroBalanceText">{{ format_currency(user.total_demo_balance) }}</span>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Primary UPI ID & Linked Bank -->
+                <div class="mt-5 pt-3.5 border-t border-slate-700/60 flex flex-wrap items-center justify-between gap-3 text-xs relative z-10">
+                    <div class="flex items-center gap-2 bg-slate-950/60 px-2.5 py-1 rounded-xl border border-slate-800">
+                        <span class="text-[11px] text-slate-400">UPI ID:</span>
+                        <span class="font-mono font-bold text-cyan-400 text-xs">{{ user.primary_upi }}</span>
+                        <button type="button" onclick="copyToClipboard('{{ user.primary_upi }}', 'UPI ID copied!')" title="Copy UPI ID" class="text-slate-400 hover:text-white text-xs ml-0.5">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+
+                    {% if primary_acc %}
+                    <div class="flex items-center gap-2 text-slate-300 text-xs">
+                        <div class="w-5 h-5 rounded bg-blue-600/30 text-blue-400 flex items-center justify-center text-[10px]">
+                            <i class="fas fa-building-columns"></i>
+                        </div>
+                        <span class="font-medium text-[11px] text-slate-300">{{ primary_acc.bank_name }} (••••{{ primary_acc.account_number_masked[-4:] }})</span>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-            {% endif %}
-        </div>
 
-        <!-- Quick Payments Navigation Tile -->
-        <div class="glass-card p-6 lg:col-span-2 flex flex-col justify-between">
-            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                Instant Simulated Actions
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <a href="{{ url_for('payments.send_money') }}" class="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/40 text-center transition-all group">
-                    <div class="w-11 h-11 rounded-xl bg-blue-600/20 text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center mx-auto mb-2.5 transition-colors">
-                        <i class="fas fa-paper-plane text-base"></i>
-                    </div>
-                    <div class="text-xs font-bold text-white">Send Money</div>
-                    <div class="text-[10px] text-slate-500 mt-0.5">To Any UPI ID</div>
-                </a>
-
-                <a href="{{ url_for('payments.receive_money') }}" class="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/40 text-center transition-all group">
-                    <div class="w-11 h-11 rounded-xl bg-emerald-600/20 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center mx-auto mb-2.5 transition-colors">
-                        <i class="fas fa-qrcode text-base"></i>
-                    </div>
-                    <div class="text-xs font-bold text-white">Receive / QR</div>
-                    <div class="text-[10px] text-slate-500 mt-0.5">Generate Codes</div>
-                </a>
-
-                <a href="{{ url_for('payments.request_money') }}" class="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/40 text-center transition-all group">
-                    <div class="w-11 h-11 rounded-xl bg-purple-600/20 text-purple-400 group-hover:bg-purple-600 group-hover:text-white flex items-center justify-center mx-auto mb-2.5 transition-colors">
-                        <i class="fas fa-hand-holding-dollar text-base"></i>
-                    </div>
-                    <div class="text-xs font-bold text-white">Request Money</div>
-                    <div class="text-[10px] text-slate-500 mt-0.5">Bill Split / Peer</div>
-                </a>
-
-                <a href="{{ url_for('payments.qr_payment') }}" class="p-4 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 hover:border-cyan-500/40 text-center transition-all group">
-                    <div class="w-11 h-11 rounded-xl bg-cyan-600/20 text-cyan-400 group-hover:bg-cyan-600 group-hover:text-white flex items-center justify-center mx-auto mb-2.5 transition-colors">
-                        <i class="fas fa-expand text-base"></i>
-                    </div>
-                    <div class="text-xs font-bold text-white">Scan & Pay</div>
-                    <div class="text-[10px] text-slate-500 mt-0.5">Simulate Scanner</div>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. AI FINANCIAL INSIGHT BANNER -->
-    <div class="glass-card p-5 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-blue-950/40 border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div class="flex items-center gap-3.5">
-            <div class="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-lg">
-                <i class="fas fa-wand-magic-sparkles"></i>
-            </div>
+            <!-- 2. QUICK ACTION SQUIRCLES (4 horizontal items matching reference image) -->
             <div>
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-purple-300">JaganPay AI Insight</span>
-                    <span class="text-[10px] bg-purple-900/80 text-purple-200 px-1.5 py-0.2 rounded font-mono">Gemini GenAI</span>
+                <div class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 px-1">
+                    Instant Quick Actions
                 </div>
-                <p class="text-xs text-slate-200 mt-0.5">{{ ai_quick_tip }}</p>
-            </div>
-        </div>
-        <a href="{{ url_for('ai.assistant') }}" class="btn-jaganpay-outline text-xs px-3 py-1.5 whitespace-nowrap flex items-center gap-1">
-            <span>Ask AI Assistant</span>
-            <i class="fas fa-chevron-right text-[10px]"></i>
-        </a>
-    </div>
-
-    <!-- 4. RECENT TRANSACTIONS & SPENDING OVERVIEW -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Recent Transactions Table (2 Cols) -->
-        <div class="glass-card p-6 lg:col-span-2">
-            <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-clock-rotate-left text-cyan-400 text-sm"></i>
-                    <h3 class="text-base font-bold text-white">Recent Transactions</h3>
-                </div>
-                <a href="{{ url_for('transactions.history') }}" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300">
-                    View All &rarr;
-                </a>
-            </div>
-
-            {% if recent_txns %}
-            <div class="divide-y divide-slate-800/80">
-                {% for txn in recent_txns %}
-                <div class="py-3 flex items-center justify-between gap-3 hover:bg-slate-900/40 px-2 rounded-lg transition-colors">
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl {{ 'bg-rose-950/60 text-rose-400 border border-rose-900/40' if txn.sender_id == user.id else 'bg-emerald-950/60 text-emerald-400 border border-emerald-900/40' }} flex items-center justify-center text-sm">
-                            <i class="fas {{ 'fa-arrow-up' if txn.sender_id == user.id else 'fa-arrow-down' }}"></i>
+                <div class="grid grid-cols-4 gap-2.5 sm:gap-4">
+                    <!-- Action 1: Scan to Pay -->
+                    <a href="{{ url_for('payments.qr_payment') }}" class="action-squircle group">
+                        <div class="action-squircle-icon bg-gradient-to-tr from-cyan-600 to-blue-500 text-white group-hover:scale-110 transition-transform">
+                            <i class="fas fa-qrcode text-lg"></i>
                         </div>
-                        <div>
-                            <div class="text-xs font-bold text-white">
-                                {% if txn.sender_id == user.id %}
-                                    To: {{ txn.receiver_upi }}
-                                {% else %}
-                                    From: {{ txn.sender_upi }}
-                                {% endif %}
+                        <span class="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">Scan to Pay</span>
+                        <span class="text-[10px] text-slate-400 hidden sm:block">Camera QR</span>
+                    </a>
+
+                    <!-- Action 2: Transfer -->
+                    <a href="{{ url_for('payments.send_money') }}" class="action-squircle group">
+                        <div class="action-squircle-icon bg-gradient-to-tr from-blue-600 to-indigo-600 text-white group-hover:scale-110 transition-transform">
+                            <i class="fas fa-paper-plane text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-white group-hover:text-cyan-400 transition-colors">Transfer</span>
+                        <span class="text-[10px] text-slate-400 hidden sm:block">Any UPI ID</span>
+                    </a>
+
+                    <!-- Action 3: Bank to Bank -->
+                    <a href="{{ url_for('payments.send_money') }}" class="action-squircle group">
+                        <div class="action-squircle-icon bg-gradient-to-tr from-emerald-600 to-teal-500 text-white group-hover:scale-110 transition-transform">
+                            <i class="fas fa-building-columns text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">Bank to Bank</span>
+                        <span class="text-[10px] text-slate-400 hidden sm:block">Self / AC</span>
+                    </a>
+
+                    <!-- Action 4: Scan & Split / Request -->
+                    <a href="{{ url_for('payments.request_money') }}" class="action-squircle group">
+                        <div class="action-squircle-icon bg-gradient-to-tr from-purple-600 to-pink-600 text-white group-hover:scale-110 transition-transform">
+                            <i class="fas fa-users-viewfinder text-lg"></i>
+                        </div>
+                        <span class="text-xs font-bold text-white group-hover:text-purple-400 transition-colors">Scan & Split</span>
+                        <span class="text-[10px] text-slate-400 hidden sm:block">Bill Share</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 3. MERCHANT NEAR YOU (Interactive Radar Map + Nearby Store List) -->
+            <div class="glass-card p-5 sm:p-6 border-slate-800">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></div>
+                        <h2 class="text-sm sm:text-base font-bold text-white">Merchant Near You</h2>
+                        <span class="text-[10px] bg-cyan-950/80 text-cyan-300 px-2 py-0.5 rounded-full font-bold border border-cyan-500/30">
+                            3 Live Stores
+                        </span>
+                    </div>
+                    <span class="text-xs text-slate-400 flex items-center gap-1">
+                        <i class="fas fa-location-crosshairs text-cyan-400 text-xs"></i>
+                        <span>Hyderabad, TG</span>
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+                    <!-- Left Column: Mini Radar Map Box (Matches Reference Photo) -->
+                    <div class="lg:col-span-5">
+                        <div class="radar-map-box h-48 sm:h-52 flex flex-col items-center justify-center p-4 relative">
+                            <!-- Concentric Radar Rings -->
+                            <div class="radar-ring radar-ring-1"></div>
+                            <div class="radar-ring radar-ring-2"></div>
+                            <div class="radar-ring radar-ring-3"></div>
+
+                            <!-- Animated Center User Location Pin -->
+                            <div class="relative z-10 flex flex-col items-center">
+                                <div class="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center radar-pin shadow-lg shadow-cyan-500/50">
+                                    <i class="fas fa-location-dot text-cyan-400 text-lg"></i>
+                                </div>
+                                <span class="text-[10px] font-bold text-cyan-200 mt-2 bg-slate-900/90 px-2.5 py-0.5 rounded-full border border-slate-800">
+                                    Your Location
+                                </span>
                             </div>
-                            <div class="text-[11px] text-slate-500">
-                                {{ txn.description or txn.type }} &bull; {{ txn.created_at.strftime('%b %d, %H:%M') }}
+
+                            <!-- Simulated Merchant Blips on Radar -->
+                            <div class="absolute top-8 left-12 w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-sm" title="Coffee Club"></div>
+                            <div class="absolute bottom-10 right-14 w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-sm" title="Apollo Pharmacy"></div>
+                            <div class="absolute top-12 right-12 w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse shadow-sm" title="DMart Express"></div>
+
+                            <!-- Bottom Radar Status -->
+                            <div class="absolute bottom-2 left-3 right-3 flex items-center justify-between text-[10px] text-slate-400">
+                                <span class="flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> GPS Active
+                                </span>
+                                <span>Range: 2.0 km</span>
                             </div>
                         </div>
                     </div>
 
-                    <div class="text-right">
-                        <div class="text-xs font-bold {{ 'text-rose-400' if txn.sender_id == user.id else 'text-emerald-400' }}">
-                            {{ '-' if txn.sender_id == user.id else '+' }}{{ format_currency(txn.amount) }}
+                    <!-- Right Column: Nearby Merchants List with 1-Tap Pay -->
+                    <div class="lg:col-span-7 space-y-2.5">
+                        {% for merchant in nearby_merchants %}
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 flex items-center justify-between gap-3 transition-all hover:bg-slate-800/60">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr {{ merchant.color }} flex items-center justify-center text-lg shadow-sm flex-shrink-0">
+                                    {{ merchant.avatar }}
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="text-xs sm:text-sm font-bold text-white">{{ merchant.name }}</span>
+                                        <i class="fas fa-circle-check text-cyan-400 text-[10px]" title="Verified Merchant"></i>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                        <span>{{ merchant.category }}</span>
+                                        <span>&bull;</span>
+                                        <span class="text-cyan-400 font-semibold flex items-center gap-0.5">
+                                            <i class="fas fa-person-walking text-[10px]"></i> {{ merchant.distance }}
+                                        </span>
+                                        <span>&bull;</span>
+                                        <span class="text-amber-400 text-[10px]">★ {{ merchant.rating }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <a href="{{ url_for('payments.send_money', to=merchant.upi_id, desc=merchant.name) }}" 
+                               class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs flex items-center gap-1 shadow-md shadow-cyan-500/20 transition-all active:scale-95 whitespace-nowrap">
+                                <i class="fas fa-bolt text-[10px]"></i>
+                                <span>Pay</span>
+                            </a>
                         </div>
-                        <a href="{{ url_for('transactions.receipt', txn_id=txn.id) }}" class="text-[10px] text-cyan-400 hover:underline">
-                            Receipt
-                        </a>
+                        {% endfor %}
                     </div>
                 </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="text-center py-10 text-slate-500 text-xs">
-                <i class="fas fa-receipt text-3xl text-slate-600 mb-2 block"></i>
-                No simulated transactions recorded yet.
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Right Column: Cashflow & Quick Notifications -->
-        <div class="space-y-6">
-            <!-- Cashflow Card -->
-            <div class="glass-card p-6">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">Simulated Cashflow</h3>
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-slate-400 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-rose-500"></span> Total Debited
-                        </span>
-                        <span class="font-bold text-rose-400">{{ format_currency(total_spent) }}</span>
-                    </div>
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-slate-400 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Total Credited
-                        </span>
-                        <span class="font-bold text-emerald-400">{{ format_currency(total_received) }}</span>
-                    </div>
-                    <div class="pt-3 border-t border-slate-800 flex items-center justify-between text-xs font-bold">
-                        <span class="text-slate-300">Net Flow</span>
-                        <span class="{{ 'text-emerald-400' if (total_received - total_spent) >= 0 else 'text-rose-400' }}">
-                            {{ format_currency(total_received - total_spent) }}
-                        </span>
-                    </div>
-                </div>
-                <a href="{{ url_for('analytics.index') }}" class="mt-4 block text-center text-xs text-cyan-400 font-semibold hover:underline">
-                    Inspect Detailed Category Breakdown &rarr;
-                </a>
             </div>
 
-            <!-- Notifications Card -->
-            <div class="glass-card p-6">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Alerts & Notifications</h3>
-                    <a href="{{ url_for('security.index') }}" class="text-[11px] text-cyan-400 hover:underline">Settings</a>
+            <!-- 4. UTILITIES / QUICK BILLS (8 Modern Icons Grid) -->
+            <div class="glass-card p-5 sm:p-6 border-slate-800">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-bolt-lightning text-yellow-400 text-sm"></i>
+                        <h2 class="text-sm sm:text-base font-bold text-white">Utilities & Quick Bills</h2>
+                    </div>
+                    <span class="text-xs text-slate-400 font-medium">Instant Simulated Pay</span>
                 </div>
-                {% if notifications %}
-                <div class="space-y-2.5">
-                    {% for n in notifications %}
-                    <div class="p-2.5 rounded-lg bg-slate-900/70 border border-slate-800 text-xs">
-                        <div class="font-semibold text-slate-200">{{ n.title }}</div>
-                        <div class="text-[11px] text-slate-400 mt-0.5 line-clamp-2">{{ n.message }}</div>
+
+                <div class="grid grid-cols-4 sm:grid-cols-8 gap-2.5 sm:gap-3">
+                    <!-- 1. Mobile Recharge -->
+                    <button type="button" onclick="openUtilityModal('Mobile Recharge', 'Enter 10-digit Mobile Number', 'airtel.demo@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-mobile-screen-button text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">Recharge</span>
+                    </button>
+
+                    <!-- 2. Electricity -->
+                    <button type="button" onclick="openUtilityModal('Electricity', 'Enter Consumer Number / USC No', 'powercorp@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-yellow-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-amber-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-bolt text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">Electricity</span>
+                    </button>
+
+                    <!-- 3. DTH / Cable -->
+                    <button type="button" onclick="openUtilityModal('DTH / Cable', 'Enter Subscriber / Smart Card ID', 'tataplay.demo@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-purple-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-tv text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">DTH TV</span>
+                    </button>
+
+                    <!-- 4. FASTag -->
+                    <button type="button" onclick="openUtilityModal('FASTag', 'Enter Vehicle Registration Number', 'fastag.toll@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-car text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">FASTag</span>
+                    </button>
+
+                    <!-- 5. Credit Card -->
+                    <button type="button" onclick="openUtilityModal('Credit Card', 'Enter Last 4 digits of Card', 'cardbill@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-rose-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-rose-600/20 text-rose-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-credit-card text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">Credit Card</span>
+                    </button>
+
+                    <!-- 6. Water -->
+                    <button type="button" onclick="openUtilityModal('Water Bill', 'Enter Water Connection Board ID', 'municipalwater@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-600/20 text-cyan-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-cyan-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-droplet text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">Water</span>
+                    </button>
+
+                    <!-- 7. LPG Gas -->
+                    <button type="button" onclick="openUtilityModal('LPG Gas', 'Enter 17-digit LPG Consumer ID', 'indane.gas@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-orange-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-orange-600/20 text-orange-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-orange-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-fire-flame-curved text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">LPG Gas</span>
+                    </button>
+
+                    <!-- 8. Broadband -->
+                    <button type="button" onclick="openUtilityModal('Broadband', 'Enter Account Number / Landline No', 'fiberbroadband@jaganpay')" class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 text-center transition-all hover:-translate-y-1 group">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center mx-auto mb-1.5 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <i class="fas fa-wifi text-base"></i>
+                        </div>
+                        <span class="text-[11px] font-bold text-slate-200 block truncate">Broadband</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. RECENT TRANSACTIONS (Clean Native List) -->
+            <div class="glass-card p-5 sm:p-6 border-slate-800">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-clock-rotate-left text-cyan-400 text-sm"></i>
+                        <h2 class="text-sm sm:text-base font-bold text-white">Recent Transactions</h2>
+                    </div>
+                    <a href="{{ url_for('transactions.history') }}" class="text-xs font-bold text-cyan-400 hover:text-cyan-300">
+                        View All History &rarr;
+                    </a>
+                </div>
+
+                {% if recent_txns %}
+                <div class="divide-y divide-slate-800/80">
+                    {% for txn in recent_txns %}
+                    <div class="py-3 flex items-center justify-between gap-3 hover:bg-slate-900/40 px-2 rounded-xl transition-colors">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-xl {{ 'bg-rose-950/60 text-rose-400 border border-rose-900/40' if txn.sender_id == user.id else 'bg-emerald-950/60 text-emerald-400 border border-emerald-900/40' }} flex items-center justify-center text-sm flex-shrink-0">
+                                <i class="fas {{ 'fa-arrow-up' if txn.sender_id == user.id else 'fa-arrow-down' }}"></i>
+                            </div>
+                            <div>
+                                <div class="text-xs sm:text-sm font-bold text-white">
+                                    {% if txn.sender_id == user.id %}
+                                        To: {{ txn.receiver_upi }}
+                                    {% else %}
+                                        From: {{ txn.sender_upi }}
+                                    {% endif %}
+                                </div>
+                                <div class="text-[11px] text-slate-400">
+                                    {{ txn.description or txn.type }} &bull; {{ txn.created_at.strftime('%b %d, %H:%M') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                            <div class="text-xs sm:text-sm font-bold {{ 'text-rose-400' if txn.sender_id == user.id else 'text-emerald-400' }}">
+                                {{ '-' if txn.sender_id == user.id else '+' }}{{ format_currency(txn.amount) }}
+                            </div>
+                            <a href="{{ url_for('transactions.receipt', txn_id=txn.id) }}" class="text-[10px] text-cyan-400 hover:underline">
+                                Receipt
+                            </a>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-xs text-slate-500 text-center py-4">No recent notifications.</p>
+                <div class="text-center py-8 text-slate-500 text-xs">
+                    <i class="fas fa-receipt text-2xl text-slate-600 mb-1.5 block"></i>
+                    No simulated transactions recorded yet. Tap "Transfer" or "Scan to Pay" to test!
+                </div>
                 {% endif %}
             </div>
         </div>
+
+        <!-- ============================================================= -->
+        <!-- SCREEN 2: STATS & ANALYTICS TAB                              -->
+        <!-- Matches Screen 2 in uploaded screenshot (Balance Bar, 2x2     -->
+        <!-- Stats Grid, Bar Chart, Gemini Copilot Card)                   -->
+        <!-- ============================================================= -->
+        <div id="screenStats" class="space-y-6 hidden">
+
+            <!-- 1. WALLET BALANCE HEADER WITH ADD MONEY ACTION -->
+            <div class="glass-card p-5 sm:p-6 border-slate-800 bg-gradient-to-r from-slate-900/90 via-indigo-950/40 to-slate-900/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <span class="text-xs uppercase tracking-wider text-slate-400 font-semibold flex items-center gap-1.5">
+                        <i class="fas fa-vault text-cyan-400"></i>
+                        <span>Simulated Account Balance</span>
+                    </span>
+                    <div class="text-3xl sm:text-4xl font-black text-white tracking-tight mt-1">
+                        {{ format_currency(user.total_demo_balance) }}
+                    </div>
+                    <div class="text-[11px] text-slate-400 mt-1">
+                        Linked to {{ primary_acc.bank_name if primary_acc else 'Demo Bank' }} (••••{{ primary_acc.account_number_masked[-4:] if primary_acc else '0000' }})
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openAddMoneyModal()" 
+                            class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Demo Money</span>
+                    </button>
+                    <a href="{{ url_for('payments.send_money') }}" 
+                       class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                        <span>Transfer</span>
+                        <i class="fas fa-chevron-right text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. 2x2 QUICK STATS GRID (Matches Screen 2 in Reference Photo) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <!-- Card 1: Amount Received -->
+                <div class="glass-card p-4 sm:p-5 border-emerald-500/30 bg-emerald-950/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Received</span>
+                        <div class="w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs">
+                            <i class="fas fa-arrow-down-left"></i>
+                        </div>
+                    </div>
+                    <div class="text-xl sm:text-2xl font-black text-emerald-400">
+                        {{ format_currency(total_received) }}
+                    </div>
+                    <div class="text-[10px] text-emerald-300/80 mt-1 flex items-center gap-1">
+                        <i class="fas fa-circle-check text-[9px]"></i> Total Inflow
+                    </div>
+                </div>
+
+                <!-- Card 2: Amount Spent -->
+                <div class="glass-card p-4 sm:p-5 border-rose-500/30 bg-rose-950/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Spent</span>
+                        <div class="w-7 h-7 rounded-lg bg-rose-600/20 text-rose-400 flex items-center justify-center text-xs">
+                            <i class="fas fa-arrow-up-right"></i>
+                        </div>
+                    </div>
+                    <div class="text-xl sm:text-2xl font-black text-rose-400">
+                        {{ format_currency(total_spent) }}
+                    </div>
+                    <div class="text-[10px] text-rose-300/80 mt-1 flex items-center gap-1">
+                        <i class="fas fa-arrow-trend-up text-[9px]"></i> Total Outflow
+                    </div>
+                </div>
+
+                <!-- Card 3: Total Transactions -->
+                <div class="glass-card p-4 sm:p-5 border-blue-500/30 bg-blue-950/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Transactions</span>
+                        <div class="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                    </div>
+                    <div class="text-xl sm:text-2xl font-black text-blue-400">
+                        {{ txn_count }}
+                    </div>
+                    <div class="text-[10px] text-blue-300/80 mt-1 flex items-center gap-1">
+                        <i class="fas fa-list-check text-[9px]"></i> All-time logs
+                    </div>
+                </div>
+
+                <!-- Card 4: Allocation Limit -->
+                <div class="glass-card p-4 sm:p-5 border-purple-500/30 bg-purple-950/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Monthly Limit</span>
+                        <div class="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-xs">
+                            <i class="fas fa-gauge-high"></i>
+                        </div>
+                    </div>
+                    <div class="text-xl sm:text-2xl font-black text-purple-400">
+                        {{ format_currency(allocation_limit) }}
+                    </div>
+                    <div class="text-[10px] text-purple-300/80 mt-1 flex items-center gap-1">
+                        <i class="fas fa-shield-halved text-[9px]"></i> Safety Limit
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. QUICK ACTION BAR -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <a href="{{ url_for('payments.send_money') }}" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 text-center transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane text-cyan-400 text-xs"></i>
+                    <span class="text-xs font-bold text-white">Send Money</span>
+                </a>
+                <a href="{{ url_for('payments.receive_money') }}" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 text-center transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-qrcode text-emerald-400 text-xs"></i>
+                    <span class="text-xs font-bold text-white">Receive QR</span>
+                </a>
+                <a href="{{ url_for('payments.qr_payment') }}" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-blue-500/40 text-center transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-expand text-blue-400 text-xs"></i>
+                    <span class="text-xs font-bold text-white">Scan to Pay</span>
+                </a>
+                <button type="button" onclick="openUtilityModal('Electricity', 'Enter Consumer Number / USC No', 'powercorp@jaganpay')" class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-yellow-500/40 text-center transition-all flex items-center justify-center gap-2">
+                    <i class="fas fa-bolt text-yellow-400 text-xs"></i>
+                    <span class="text-xs font-bold text-white">Pay Bills</span>
+                </button>
+            </div>
+
+            <!-- 4. TRANSACTION ANALYTICS BAR CHART (Matching Screen 2 in Reference Photo) -->
+            <div class="glass-card p-5 sm:p-6 border-slate-800">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-chart-simple text-cyan-400 text-base"></i>
+                            <h2 class="text-sm sm:text-base font-bold text-white">Transaction Analytics</h2>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-0.5">Monthly simulated spending breakdown</p>
+                    </div>
+
+                    <!-- Timeframe Pill Buttons -->
+                    <div class="inline-flex p-1 bg-slate-900 border border-slate-800 rounded-xl self-start sm:self-auto">
+                        <button type="button" onclick="updateChartTimeframe('month')" id="btnTfMonth" class="px-3 py-1 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-sm transition-colors">Month</button>
+                        <button type="button" onclick="updateChartTimeframe('week')" id="btnTfWeek" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors">Week</button>
+                        <button type="button" onclick="updateChartTimeframe('year')" id="btnTfYear" class="px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors">Year</button>
+                    </div>
+                </div>
+
+                <!-- Canvas for Chart.js -->
+                <div class="w-full h-64 sm:h-72 relative">
+                    <canvas id="appAnalyticsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 5. GEMINI AI FINANCIAL COPILOT INSIGHT -->
+            <div class="glass-card p-5 bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-blue-950/40 border-purple-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 flex items-center justify-center flex-shrink-0 text-lg">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-purple-300">JaganPay AI Financial Copilot</span>
+                            <span class="text-[10px] bg-purple-900/80 text-purple-200 px-1.5 py-0.2 rounded font-mono">Gemini GenAI</span>
+                        </div>
+                        <p class="text-xs text-slate-200 mt-0.5">{{ ai_quick_tip }}</p>
+                    </div>
+                </div>
+                <a href="{{ url_for('ai.assistant') }}" class="btn-jaganpay-outline text-xs px-3.5 py-2 whitespace-nowrap flex items-center gap-1.5">
+                    <span>Ask AI Assistant</span>
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- VIEW CONTAINER 2: DUAL PHONE VISUALIZER (Desktop Mode)           -->
+    <!-- Displays Screen 1 and Screen 2 side-by-side inside phone frames   -->
+    <!-- exactly matching the user's uploaded reference image              -->
+    <!-- ================================================================= -->
+    <div id="dualViewContainer" class="hidden py-4">
+        <div class="text-center mb-6">
+            <h2 class="text-xl font-black text-white flex items-center justify-center gap-2">
+                <span>📱 Dual Mobile App Visualizer</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">
+                Authentic preview of JaganPay running as a native Android & iOS mobile payment app
+            </p>
+        </div>
+
+        <div class="phone-dual-wrapper">
+
+            <!-- ==================== LEFT PHONE: HOME SCREEN ==================== -->
+            <div class="phone-mockup-frame">
+                <div class="phone-speaker-notch"></div>
+                
+                <!-- Inner Screen Content -->
+                <div class="phone-screen-content px-4 py-3 space-y-4">
+                    
+                    <!-- Phone Mini Header -->
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex items-center gap-2">
+                            <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Logo" class="w-6 h-6 rounded-lg">
+                            <span class="text-xs font-black text-white">Jagan<span class="text-cyan-400">Pay</span></span>
+                        </div>
+                        <div class="flex items-center gap-2 text-slate-400 text-xs">
+                            <i class="fas fa-bell"></i>
+                            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">
+                                {{ user.full_name[:2] }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Hero Card -->
+                    <div class="wallet-hero-card p-4 text-white relative">
+                        <div class="wallet-hero-waves"></div>
+                        <div class="flex items-center justify-between mb-2 relative z-10">
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-6 h-5 rounded bg-amber-400 border border-amber-200/50 flex items-center justify-center">
+                                    <i class="fas fa-microchip text-slate-900 text-[10px]"></i>
+                                </div>
+                                <i class="fas fa-wifi fa-rotate-90 text-slate-400 text-[10px]"></i>
+                            </div>
+                            <span class="text-[9px] text-cyan-300/80 bg-cyan-950/60 px-2 py-0.5 rounded-full">Primary</span>
+                        </div>
+                        <div class="text-[10px] text-slate-300">Welcome, {{ user.full_name }}</div>
+                        <div class="text-[10px] text-slate-400 mt-1 uppercase font-semibold">Wallet Balance</div>
+                        <div class="text-2xl font-black text-white tracking-tight mt-0.5">
+                            {{ format_currency(user.total_demo_balance) }}
+                        </div>
+                        <div class="mt-3 pt-2 border-t border-slate-700/60 flex items-center justify-between text-[10px] relative z-10">
+                            <span class="font-mono text-cyan-400 truncate max-w-[170px]">{{ user.primary_upi }}</span>
+                            <span class="text-slate-400">Active</span>
+                        </div>
+                    </div>
+
+                    <!-- 4 Quick Squircles -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <a href="{{ url_for('payments.qr_payment') }}" class="action-squircle p-2">
+                            <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-1 text-xs">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <span class="text-[9px] font-bold text-white">Scan</span>
+                        </a>
+                        <a href="{{ url_for('payments.send_money') }}" class="action-squircle p-2">
+                            <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center mb-1 text-xs">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                            <span class="text-[9px] font-bold text-white">Transfer</span>
+                        </a>
+                        <a href="{{ url_for('payments.send_money') }}" class="action-squircle p-2">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-xs">
+                                <i class="fas fa-building-columns"></i>
+                            </div>
+                            <span class="text-[9px] font-bold text-white">Bank</span>
+                        </a>
+                        <a href="{{ url_for('payments.request_money') }}" class="action-squircle p-2">
+                            <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center mb-1 text-xs">
+                                <i class="fas fa-users-viewfinder"></i>
+                            </div>
+                            <span class="text-[9px] font-bold text-white">Split</span>
+                        </a>
+                    </div>
+
+                    <!-- Merchant Near You Mini Section -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-white">
+                            <span>Merchant Near You</span>
+                            <span class="text-[9px] text-cyan-400">3 Nearby</span>
+                        </div>
+                        
+                        <!-- Mini Radar Box -->
+                        <div class="radar-map-box h-24 flex items-center justify-center relative">
+                            <div class="radar-ring radar-ring-1"></div>
+                            <div class="radar-ring radar-ring-2"></div>
+                            <div class="w-6 h-6 rounded-full bg-cyan-500/20 border border-cyan-400 flex items-center justify-center radar-pin">
+                                <i class="fas fa-location-dot text-cyan-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- Mini Merchant Item -->
+                        {% for m in nearby_merchants[:2] %}
+                        <div class="flex items-center justify-between text-xs p-1.5 rounded-lg bg-slate-950/60">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm">{{ m.avatar }}</span>
+                                <div>
+                                    <div class="font-bold text-white text-[11px] truncate max-w-[130px]">{{ m.name }}</div>
+                                    <div class="text-[9px] text-slate-400">{{ m.distance }} &bull; {{ m.category }}</div>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('payments.send_money', to=m.upi_id) }}" class="px-2 py-0.5 rounded bg-cyan-500 text-slate-950 font-bold text-[10px]">
+                                Pay
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Utilities Mini Grid -->
+                    <div class="p-3 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <div class="text-[11px] font-bold text-white mb-2">Utilities & Recharges</div>
+                        <div class="grid grid-cols-4 gap-2 text-center">
+                            <div class="p-1.5 rounded-xl bg-slate-950 text-blue-400 text-xs">
+                                <i class="fas fa-mobile-screen"></i>
+                                <span class="block text-[8px] text-slate-300 mt-0.5">Mobile</span>
+                            </div>
+                            <div class="p-1.5 rounded-xl bg-slate-950 text-amber-400 text-xs">
+                                <i class="fas fa-bolt"></i>
+                                <span class="block text-[8px] text-slate-300 mt-0.5">Power</span>
+                            </div>
+                            <div class="p-1.5 rounded-xl bg-slate-950 text-purple-400 text-xs">
+                                <i class="fas fa-tv"></i>
+                                <span class="block text-[8px] text-slate-300 mt-0.5">DTH</span>
+                            </div>
+                            <div class="p-1.5 rounded-xl bg-slate-950 text-emerald-400 text-xs">
+                                <i class="fas fa-car"></i>
+                                <span class="block text-[8px] text-slate-300 mt-0.5">FASTag</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Bottom Mockup Nav Bar -->
+                <div class="mobile-app-bottom-nav" style="position: absolute; bottom: 0; left: 0; right: 0;">
+                    <div class="bottom-nav-inner">
+                        <div class="nav-item active"><i class="fas fa-house"></i><span>Home</span></div>
+                        <div class="nav-item"><i class="fas fa-clock-rotate-left"></i><span>History</span></div>
+                        <div class="floating-scan-wrapper">
+                            <div class="floating-scan-btn"><i class="fas fa-qrcode"></i></div>
+                        </div>
+                        <div class="nav-item"><i class="fas fa-chart-pie"></i><span>Stats</span></div>
+                        <div class="nav-item"><i class="fas fa-bars"></i><span>Menu</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== RIGHT PHONE: STATS & ANALYTICS ==================== -->
+            <div class="phone-mockup-frame">
+                <div class="phone-speaker-notch"></div>
+
+                <!-- Inner Screen Content -->
+                <div class="phone-screen-content px-4 py-3 space-y-4">
+
+                    <!-- Phone Mini Header -->
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex items-center gap-1.5">
+                            <i class="fas fa-chart-simple text-purple-400 text-xs"></i>
+                            <span class="text-xs font-black text-white">Stats & Analytics</span>
+                        </div>
+                        <button type="button" onclick="openAddMoneyModal()" class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 text-[10px] font-bold border border-cyan-500/40">
+                            + Add Money
+                        </button>
+                    </div>
+
+                    <!-- Mini Balance Summary -->
+                    <div class="p-3.5 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950 border border-slate-800">
+                        <div class="text-[10px] text-slate-400 font-semibold uppercase">Wallet Balance</div>
+                        <div class="text-2xl font-black text-white tracking-tight mt-0.5">
+                            {{ format_currency(user.total_demo_balance) }}
+                        </div>
+                    </div>
+
+                    <!-- 2x2 Mini Stats Grid -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30">
+                            <div class="text-[9px] text-slate-400 font-semibold uppercase">Received</div>
+                            <div class="text-sm font-black text-emerald-400 mt-0.5">{{ format_currency(total_received) }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/30">
+                            <div class="text-[9px] text-slate-400 font-semibold uppercase">Spent</div>
+                            <div class="text-sm font-black text-rose-400 mt-0.5">{{ format_currency(total_spent) }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-blue-950/40 border border-blue-500/30">
+                            <div class="text-[9px] text-slate-400 font-semibold uppercase">Txn Count</div>
+                            <div class="text-sm font-black text-blue-400 mt-0.5">{{ txn_count }}</div>
+                        </div>
+                        <div class="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/30">
+                            <div class="text-[9px] text-slate-400 font-semibold uppercase">Limit</div>
+                            <div class="text-sm font-black text-purple-400 mt-0.5">{{ format_currency(allocation_limit) }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Bar Chart Container -->
+                    <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between text-xs font-bold text-white">
+                            <span>Transaction Analytics</span>
+                            <span class="text-[9px] bg-slate-800 px-1.5 py-0.5 rounded text-cyan-400">Month</span>
+                        </div>
+                        <div class="h-36 relative">
+                            <canvas id="dualPhoneChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Mini AI Insight -->
+                    <div class="p-2.5 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-start gap-2">
+                        <i class="fas fa-wand-magic-sparkles text-purple-400 text-xs mt-0.5"></i>
+                        <p class="text-[10px] text-purple-200 line-clamp-2">{{ ai_quick_tip }}</p>
+                    </div>
+
+                </div>
+
+                <!-- Bottom Mockup Nav Bar -->
+                <div class="mobile-app-bottom-nav" style="position: absolute; bottom: 0; left: 0; right: 0;">
+                    <div class="bottom-nav-inner">
+                        <div class="nav-item"><i class="fas fa-house"></i><span>Home</span></div>
+                        <div class="nav-item"><i class="fas fa-clock-rotate-left"></i><span>History</span></div>
+                        <div class="floating-scan-wrapper">
+                            <div class="floating-scan-btn"><i class="fas fa-qrcode"></i></div>
+                        </div>
+                        <div class="nav-item active"><i class="fas fa-chart-pie"></i><span>Stats</span></div>
+                        <div class="nav-item"><i class="fas fa-bars"></i><span>Menu</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ================================================================= -->
+<!-- MODAL: ADD DEMO MONEY (Top up simulated funds)                    -->
+<!-- ================================================================= -->
+<div id="addMoneyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+    <div class="glass-card max-w-md w-full p-6 border-cyan-500/40 relative shadow-2xl">
+        <button type="button" onclick="closeAddMoneyModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <i class="fas fa-times text-base"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">Add Simulated Demo Funds</h3>
+                <p class="text-xs text-slate-400">Instantly credit test balance to your wallet</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('dashboard.add_demo_funds') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1.5">Select Preset Amount</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="setDemoAmount(1000)" class="py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-xs font-bold text-white transition-all">₹ 1,000</button>
+                    <button type="button" onclick="setDemoAmount(5000)" class="py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-xs font-bold text-white transition-all">₹ 5,000</button>
+                    <button type="button" onclick="setDemoAmount(25000)" class="py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-xs font-bold text-white transition-all">₹ 25,000</button>
+                </div>
+            </div>
+
+            <div>
+                <label for="customAmount" class="block text-xs font-semibold text-slate-300 mb-1">Or Enter Custom Amount (₹)</label>
+                <input type="number" id="customAmount" name="amount" value="5000" min="100" max="500000" step="100" required 
+                       class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div class="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-500/30 text-[11px] text-indigo-200">
+                <i class="fas fa-info-circle text-cyan-400 mr-1"></i>
+                Simulated currency only. No real debit card or bank account will be charged.
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+                <button type="button" onclick="closeAddMoneyModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold shadow-md shadow-cyan-500/25 transition-all">
+                    Credit ₹ Funds
+                </button>
+            </div>
+        </form>
     </div>
 </div>
+
+<!-- ================================================================= -->
+<!-- MODAL: QUICK UTILITY BILL SIMULATOR                               -->
+<!-- ================================================================= -->
+<div id="utilityModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden p-4">
+    <div class="glass-card max-w-md w-full p-6 border-yellow-500/40 relative shadow-2xl">
+        <button type="button" onclick="closeUtilityModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+            <i class="fas fa-times text-base"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-xl bg-yellow-500/20 text-yellow-400 flex items-center justify-center text-lg">
+                <i class="fas fa-bolt-lightning"></i>
+            </div>
+            <div>
+                <h3 id="utilityModalTitle" class="text-base font-bold text-white">Electricity Bill</h3>
+                <p class="text-xs text-slate-400">Instant Simulated BBPS Provider</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('dashboard.pay_utility') }}" method="POST" class="space-y-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="utilityModalServiceName" name="utility_name" value="Electricity">
+
+            <div>
+                <label id="utilityModalIdLabel" for="utilityConsumerId" class="block text-xs font-semibold text-slate-300 mb-1">
+                    Consumer / Account Number
+                </label>
+                <input type="text" id="utilityConsumerId" name="consumer_id" value="TG8839201" required 
+                       class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-xs focus:outline-none focus:border-yellow-400">
+            </div>
+
+            <div>
+                <label for="utilityAmount" class="block text-xs font-semibold text-slate-300 mb-1">Bill Amount (₹)</label>
+                <input type="number" id="utilityAmount" name="amount" value="650" min="10" max="50000" required 
+                       class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono text-sm focus:outline-none focus:border-yellow-400">
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+                <button type="button" onclick="closeUtilityModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition-colors">
+                    Cancel
+                </button>
+                <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 text-xs font-bold shadow-md shadow-yellow-500/25 transition-all">
+                    ⚡ Pay Simulated Bill
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ================================================================= -->
+<!-- SCRIPTS FOR INTERACTIVE VIEW SWITCHING & CHART.JS                -->
+<!-- ================================================================= -->
+<script>
+    // State variables
+    let isBalanceMasked = false;
+    let originalBalance = "{{ format_currency(user.total_demo_balance) }}";
+    let mainAnalyticsChart = null;
+    let dualAnalyticsChart = null;
+
+    // Chart Data from backend
+    const chartMonths = {{ chart_months|tojson }};
+    const chartSpentData = {{ chart_spent|tojson }};
+
+    function toggleBalanceMask() {
+        isBalanceMasked = !isBalanceMasked;
+        const balanceEl = document.getElementById('heroBalanceText');
+        const eyeIcon = document.getElementById('balanceEyeIcon');
+        if (isBalanceMasked) {
+            balanceEl.textContent = '••••••••';
+            eyeIcon.className = 'fas fa-eye-slash text-xs text-cyan-400';
+        } else {
+            balanceEl.textContent = originalBalance;
+            eyeIcon.className = 'fas fa-eye text-xs text-slate-400 hover:text-white';
+        }
+    }
+
+    function switchAppView(viewName) {
+        const singleContainer = document.getElementById('singleViewContainer');
+        const dualContainer = document.getElementById('dualViewContainer');
+        const screenHome = document.getElementById('screenHome');
+        const screenStats = document.getElementById('screenStats');
+
+        const tabBtnHome = document.getElementById('tabBtnHome');
+        const tabBtnStats = document.getElementById('tabBtnStats');
+        const tabBtnDual = document.getElementById('tabBtnDual');
+
+        // Reset tab styles
+        [tabBtnHome, tabBtnStats, tabBtnDual].forEach(btn => {
+            if (btn) btn.classList.remove('active', 'text-slate-300');
+            if (btn) btn.classList.add('text-slate-400');
+        });
+
+        if (viewName === 'home') {
+            singleContainer.classList.remove('hidden');
+            dualContainer.classList.add('hidden');
+            screenHome.classList.remove('hidden');
+            screenStats.classList.add('hidden');
+            tabBtnHome.classList.add('active', 'text-slate-300');
+            tabBtnHome.classList.remove('text-slate-400');
+        } else if (viewName === 'stats') {
+            singleContainer.classList.remove('hidden');
+            dualContainer.classList.add('hidden');
+            screenHome.classList.add('hidden');
+            screenStats.classList.remove('hidden');
+            tabBtnStats.classList.add('active', 'text-slate-300');
+            tabBtnStats.classList.remove('text-slate-400');
+            renderAppChart('appAnalyticsChart');
+        } else if (viewName === 'dual') {
+            singleContainer.classList.add('hidden');
+            dualContainer.classList.remove('hidden');
+            if (tabBtnDual) {
+                tabBtnDual.classList.add('active', 'text-slate-300');
+                tabBtnDual.classList.remove('text-slate-400');
+            }
+            renderAppChart('dualPhoneChart');
+        }
+    }
+
+    function renderAppChart(canvasId) {
+        const ctx = document.getElementById(canvasId);
+        if (!ctx) return;
+
+        // Chart gradient
+        const chartCtx = ctx.getContext('2d');
+        const gradient = chartCtx.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, 'rgba(6, 182, 212, 0.9)');
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.25)');
+
+        const config = {
+            type: 'bar',
+            data: {
+                labels: chartMonths,
+                datasets: [{
+                    label: 'Simulated Outflow (₹)',
+                    data: chartSpentData,
+                    backgroundColor: gradient,
+                    borderColor: 'rgba(6, 182, 212, 1)',
+                    borderWidth: 1.5,
+                    borderRadius: 8,
+                    borderSkipped: false,
+                    barPercentage: 0.55,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        borderColor: '#38bdf8',
+                        borderWidth: 1,
+                        titleColor: '#ffffff',
+                        bodyColor: '#38bdf8',
+                        callbacks: {
+                            label: function(context) {
+                                return ' ₹ ' + Number(context.raw).toLocaleString('en-IN', { minimumFractionDigits: 2 });
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 11, weight: 'bold' } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: {
+                            color: '#64748b',
+                            font: { size: 10 },
+                            callback: function(value) {
+                                return '₹' + (value >= 1000 ? (value/1000) + 'k' : value);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        if (canvasId === 'appAnalyticsChart') {
+            if (mainAnalyticsChart) mainAnalyticsChart.destroy();
+            mainAnalyticsChart = new Chart(ctx, config);
+        } else if (canvasId === 'dualPhoneChart') {
+            if (dualAnalyticsChart) dualAnalyticsChart.destroy();
+            dualAnalyticsChart = new Chart(ctx, config);
+        }
+    }
+
+    function updateChartTimeframe(tf) {
+        ['Month', 'Week', 'Year'].forEach(item => {
+            const btn = document.getElementById('btnTf' + item);
+            if (btn) {
+                btn.className = 'px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-colors';
+            }
+        });
+        const activeBtn = document.getElementById('btnTf' + tf.charAt(0).toUpperCase() + tf.slice(1));
+        if (activeBtn) {
+            activeBtn.className = 'px-3 py-1 rounded-lg text-xs font-bold bg-cyan-600 text-white shadow-sm transition-colors';
+        }
+
+        if (!mainAnalyticsChart) return;
+
+        if (tf === 'week') {
+            mainAnalyticsChart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            mainAnalyticsChart.data.datasets[0].data = [350, 720, 150, 890, 420, 1200, 560];
+        } else if (tf === 'year') {
+            mainAnalyticsChart.data.labels = ['2023', '2024', '2025', '2026'];
+            mainAnalyticsChart.data.datasets[0].data = [18500, 34200, 62100, Math.max({{ total_spent }}, 25000)];
+        } else {
+            mainAnalyticsChart.data.labels = chartMonths;
+            mainAnalyticsChart.data.datasets[0].data = chartSpentData;
+        }
+        mainAnalyticsChart.update();
+    }
+
+    // Modal Helpers
+    function openAddMoneyModal() {
+        document.getElementById('addMoneyModal').classList.remove('hidden');
+    }
+    function closeAddMoneyModal() {
+        document.getElementById('addMoneyModal').classList.add('hidden');
+    }
+    function setDemoAmount(amt) {
+        document.getElementById('customAmount').value = amt;
+    }
+
+    function openUtilityModal(serviceName, idLabel, upiId) {
+        document.getElementById('utilityModalTitle').textContent = serviceName + ' Bill Simulation';
+        document.getElementById('utilityModalServiceName').value = serviceName;
+        document.getElementById('utilityModalIdLabel').textContent = idLabel;
+        document.getElementById('utilityModal').classList.remove('hidden');
+    }
+    function closeUtilityModal() {
+        document.getElementById('utilityModal').classList.add('hidden');
+    }
+
+    // Auto switch based on URL query parameter ?tab=analytics
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'analytics') {
+            switchAppView('stats');
+        }
+    });
+</script>
 {% endblock %}

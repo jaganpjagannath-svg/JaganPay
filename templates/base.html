@@ -46,15 +46,32 @@
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icon-192.png') }}">
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
     <script>
-        // Automatic Native App Mode Detection
+        // Automatic Native App Mode Detection (Runs immediately in head)
         (function() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone || localStorage.getItem('jaganpay_app_mode') === 'true';
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                                 window.matchMedia('(display-mode: minimal-ui)').matches ||
+                                 window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+                                 window.navigator.standalone === true || 
+                                 localStorage.getItem('jaganpay_app_mode') === 'true' ||
+                                 localStorage.getItem('jaganpay_installed') === 'true';
             if (isStandalone) {
                 document.documentElement.classList.add('app-mode');
+                document.documentElement.setAttribute('data-standalone', 'true');
             }
+            document.addEventListener('DOMContentLoaded', () => {
+                if (isStandalone && document.body) {
+                    document.body.setAttribute('data-standalone', 'true');
+                    document.body.classList.add('app-mode');
+                }
+            });
         })();
         function toggleAppModePreview() {
             const isApp = document.documentElement.classList.toggle('app-mode');
+            if (document.body) {
+                document.body.classList.toggle('app-mode', isApp);
+                document.body.setAttribute('data-standalone', isApp ? 'true' : 'false');
+            }
+            document.documentElement.setAttribute('data-standalone', isApp ? 'true' : 'false');
             localStorage.setItem('jaganpay_app_mode', isApp ? 'true' : 'false');
             showToast(isApp ? 'Switched to Native Mobile App Mode' : 'Switched to Full Desktop Mode', 'info');
         }
@@ -249,9 +266,9 @@
     </main>
 
     <!-- NATIVE MOBILE APP BOTTOM NAVIGATION BAR (Curved Cutout & Floating Scan Button) -->
-    {% if current_user.is_authenticated %}
     <nav class="mobile-app-bottom-nav">
         <div class="bottom-nav-inner">
+            {% if current_user.is_authenticated %}
             <a href="{{ url_for('dashboard.index') }}" class="nav-item {{ 'active' if request.endpoint == 'dashboard.index' and not request.args.get('tab') }}">
                 <i class="fas fa-house"></i>
                 <span>Home</span>
@@ -277,9 +294,35 @@
                 <i class="fas fa-bars"></i>
                 <span>Menu</span>
             </a>
+            {% else %}
+            <a href="{{ url_for('main.index') }}" class="nav-item {{ 'active' if request.endpoint == 'main.index' }}">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="nav-item {{ 'active' if request.endpoint == 'auth.login' }}">
+                <i class="fas fa-arrow-right-to-bracket"></i>
+                <span>Sign In</span>
+            </a>
+
+            <!-- Elevated Floating Center Circular Demo Button -->
+            <div class="floating-scan-wrapper">
+                <a href="{{ url_for('auth.login') }}" class="floating-scan-btn" title="Try Demo">
+                    <i class="fas fa-bolt"></i>
+                </a>
+                <span class="scan-label">Try Demo</span>
+            </div>
+
+            <a href="{{ url_for('auth.register') }}" class="nav-item {{ 'active' if request.endpoint == 'auth.register' }}">
+                <i class="fas fa-user-plus"></i>
+                <span>Register</span>
+            </a>
+            <a href="{{ url_for('main.about') }}" class="nav-item {{ 'active' if request.endpoint == 'main.about' }}">
+                <i class="fas fa-circle-info"></i>
+                <span>About</span>
+            </a>
+            {% endif %}
         </div>
     </nav>
-    {% endif %}
 
     <!-- FOOTER (Hidden in App Mode / Mobile screens) -->
     <footer class="desktop-web-footer bg-slate-950 border-t border-slate-800/80 mt-16 py-10 text-slate-400 text-sm">
@@ -348,7 +391,7 @@
     </footer>
 
     <!-- FLOATING PWA INSTALL BANNER -->
-    <div id="pwaInstallBanner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-slate-900/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 shadow-2xl shadow-cyan-500/20 text-white hidden flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
+    <div id="pwaInstallBanner" class="pwa-install-trigger install-hide-in-app fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-md z-40 bg-slate-900/95 backdrop-blur-md border border-cyan-500/40 rounded-2xl p-4 shadow-2xl shadow-cyan-500/20 text-white hidden flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
         <div class="flex items-center gap-3 w-full sm:w-auto">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white text-lg shadow-md shrink-0">
                 <i class="fas fa-bolt"></i>
@@ -359,7 +402,7 @@
             </div>
         </div>
         <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button type="button" onclick="triggerPwaInstall()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
+            <button type="button" onclick="triggerPwaInstall()" class="pwa-install-trigger install-hide-in-app px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer">
                 <i class="fas fa-download text-xs"></i> Install
             </button>
             <button type="button" onclick="dismissPwaBanner()" class="p-2 text-slate-400 hover:text-white text-xs cursor-pointer">
@@ -369,7 +412,7 @@
     </div>
 
     <!-- IOS INSTALL GUIDE MODAL -->
-    <div id="iosInstallModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="iosInstallModal" class="install-hide-in-app fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 rounded-2xl bg-cyan-600/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-2xl mx-auto">
                 <i class="fas fa-arrow-up-from-bracket"></i>

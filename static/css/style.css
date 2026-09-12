@@ -178,13 +178,15 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1040;
-    background: rgba(10, 15, 36, 0.94);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(56, 189, 248, 0.18);
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    z-index: 99999 !important;
+    background: rgba(9, 14, 32, 0.98);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1.5px solid rgba(56, 189, 248, 0.28);
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.7), 0 -1px 0 rgba(255, 255, 255, 0.08);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 4px);
 }
 
 .bottom-nav-inner {
@@ -194,7 +196,7 @@ body {
     justify-content: space-around;
     align-items: center;
     position: relative;
-    height: 64px;
+    height: 66px;
     padding: 0 0.5rem;
 }
 
@@ -204,31 +206,48 @@ body {
     align-items: center;
     justify-content: center;
     color: #94a3b8;
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.68rem;
+    font-weight: 600;
     text-decoration: none;
     transition: all 0.2s ease;
     flex: 1;
     height: 100%;
+    position: relative;
 }
 
 .nav-item i {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     margin-bottom: 3px;
     transition: transform 0.2s ease, color 0.2s ease;
 }
 
+.nav-item:hover {
+    color: #38bdf8;
+}
+
 .nav-item.active {
     color: #38bdf8;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .nav-item.active i {
     color: #38bdf8;
     transform: translateY(-2px);
+    filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.45));
 }
 
-/* Elevated Floating Center Scan Button */
+.nav-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 6px #38bdf8;
+}
+
+/* Elevated Floating Center Circular Scan Button (Matches Reference Image) */
 .floating-scan-wrapper {
     position: relative;
     display: flex;
@@ -236,28 +255,59 @@ body {
     align-items: center;
     justify-content: center;
     flex: 1;
-    margin-top: -24px;
+    margin-top: -30px;
+    z-index: 10;
+}
+
+.floating-scan-wrapper::before {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 74px;
+    height: 38px;
+    background: #090e20;
+    border-bottom-left-radius: 40px;
+    border-bottom-right-radius: 40px;
+    border-bottom: 2px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 12px rgba(6, 182, 212, 0.2);
+    z-index: 1;
+    pointer-events: none;
+}
+
+@keyframes scan-glow-pulse {
+    0%, 100% {
+        box-shadow: 0 8px 24px rgba(6, 182, 212, 0.55), 0 0 0 0 rgba(6, 182, 212, 0.4);
+    }
+    50% {
+        box-shadow: 0 12px 30px rgba(6, 182, 212, 0.75), 0 0 0 7px rgba(6, 182, 212, 0);
+    }
 }
 
 .floating-scan-btn {
-    width: 54px;
-    height: 54px;
+    position: relative;
+    z-index: 2;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #7c3aed 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, #06b6d4 0%, #2563eb 50%, #4f46e5 100%);
+    color: #ffffff !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.35rem;
-    box-shadow: 0 8px 24px rgba(6, 182, 212, 0.45);
-    border: 3.5px solid #0a0f24;
+    font-size: 1.45rem;
+    box-shadow: 0 10px 28px rgba(6, 182, 212, 0.55), 0 0 15px rgba(6, 182, 212, 0.35);
+    border: 4px solid #070b19;
     transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     cursor: pointer;
+    text-decoration: none;
+    animation: scan-glow-pulse 3s infinite;
 }
 
 .floating-scan-btn:hover {
-    transform: scale(1.08) translateY(-2px);
-    box-shadow: 0 12px 30px rgba(6, 182, 212, 0.6);
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 14px 35px rgba(6, 182, 212, 0.75);
 }
 
 .floating-scan-btn:active {
@@ -265,11 +315,15 @@ body {
 }
 
 .scan-label {
+    position: relative;
+    z-index: 2;
     font-size: 0.65rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #38bdf8;
-    margin-top: 3px;
+    margin-top: 4px;
     letter-spacing: 0.02em;
+    text-align: center;
+    white-space: nowrap;
 }
 
 /* Smartphone Mockup Frame (For Desktop Visualizer Mode) */
@@ -326,6 +380,18 @@ body {
     padding-top: 36px;
     padding-bottom: 75px;
     -webkit-overflow-scrolling: touch;
+}
+
+.phone-mockup-frame .mobile-app-bottom-nav {
+    display: block !important;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    transform: none !important;
+    z-index: 40 !important;
 }
 
 /* Quick Action Squircles */
@@ -388,10 +454,11 @@ body {
 }
 
 /* ===================================================
-   RESPONSIVE & APP-MODE SWITCHING
+   RESPONSIVE & NATIVE APP MODE (Mobile & Installed PWA)
 =================================================== */
 
-@media (max-width: 768px), (display-mode: standalone) {
+/* 1. Mobile Screens (< 1024px), Standalone PWA, and App-Mode */
+@media (max-width: 1023px) {
     .desktop-web-header {
         display: none !important;
     }
@@ -401,41 +468,147 @@ body {
     .desktop-web-footer {
         display: none !important;
     }
+    .desktop-view-selector {
+        display: none !important;
+    }
     .mobile-app-header {
         display: block !important;
     }
     .mobile-app-bottom-nav {
         display: block !important;
     }
-    body {
-        padding-bottom: 76px !important;
-        background-color: #070b19;
+    .mobile-segmented-switcher {
+        display: flex !important;
     }
-    .app-viewport-container {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-        padding-top: 1rem !important;
+    #viewWebUnified {
+        display: none !important;
+    }
+    #viewMobileApp {
+        display: block !important;
+    }
+    body {
+        padding-bottom: 90px !important;
+        background-color: #070b19;
     }
 }
 
-/* Class-triggered app mode for manual preview */
-html.app-mode .desktop-web-header {
+/* 2. STRICTLY HIDE ALL INSTALL BUTTONS AND BANNERS INSIDE APP */
+@media (display-mode: standalone), (display-mode: minimal-ui), (display-mode: window-controls-overlay) {
+    .pwa-install-trigger,
+    #pwaInstallBanner,
+    #iosInstallModal,
+    .install-hide-in-app {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .desktop-web-header,
+    .demo-banner,
+    .desktop-web-footer,
+    .desktop-view-selector {
+        display: none !important;
+    }
+    .mobile-app-header,
+    .mobile-app-bottom-nav {
+        display: block !important;
+    }
+    .mobile-segmented-switcher {
+        display: flex !important;
+    }
+    #viewWebUnified {
+        display: none !important;
+    }
+    #viewMobileApp {
+        display: block !important;
+    }
+    body {
+        padding-bottom: 90px !important;
+        background-color: #070b19;
+    }
+}
+
+html.app-mode .pwa-install-trigger,
+html.app-mode #pwaInstallBanner,
+html.app-mode #iosInstallModal,
+html.app-mode .install-hide-in-app,
+body[data-standalone="true"] .pwa-install-trigger,
+body[data-standalone="true"] #pwaInstallBanner,
+body[data-standalone="true"] #iosInstallModal,
+body[data-standalone="true"] .install-hide-in-app {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 3. Class-triggered app mode for manual preview and standalone attribute */
+html.app-mode .desktop-web-header,
+body[data-standalone="true"] .desktop-web-header {
     display: none !important;
 }
-html.app-mode .demo-banner {
+html.app-mode .demo-banner,
+body[data-standalone="true"] .demo-banner {
     display: none !important;
 }
-html.app-mode .desktop-web-footer {
+html.app-mode .desktop-web-footer,
+body[data-standalone="true"] .desktop-web-footer {
     display: none !important;
 }
-html.app-mode .mobile-app-header {
+html.app-mode .desktop-view-selector,
+body[data-standalone="true"] .desktop-view-selector {
+    display: none !important;
+}
+html.app-mode .mobile-app-header,
+body[data-standalone="true"] .mobile-app-header {
     display: block !important;
 }
-html.app-mode .mobile-app-bottom-nav {
+html.app-mode .mobile-app-bottom-nav,
+body[data-standalone="true"] .mobile-app-bottom-nav {
     display: block !important;
 }
-html.app-mode body {
-    padding-bottom: 76px !important;
+html.app-mode .mobile-segmented-switcher,
+body[data-standalone="true"] .mobile-segmented-switcher {
+    display: flex !important;
+}
+html.app-mode #viewWebUnified,
+body[data-standalone="true"] #viewWebUnified {
+    display: none !important;
+}
+html.app-mode #viewMobileApp,
+body[data-standalone="true"] #viewMobileApp {
+    display: block !important;
+}
+html.app-mode body,
+body[data-standalone="true"] {
+    padding-bottom: 90px !important;
+    background-color: #050814;
+}
+
+/* 4. Center app frame when running in standalone mode or app-mode on wide desktop screens */
+@media (min-width: 1024px) {
+    html.app-mode,
+    body[data-standalone="true"] {
+        background-color: #050814 !important;
+    }
+    html.app-mode main,
+    body[data-standalone="true"] main {
+        max-width: 460px !important;
+        margin: 0 auto !important;
+    }
+    html.app-mode .mobile-app-header,
+    body[data-standalone="true"] .mobile-app-header {
+        max-width: 460px !important;
+        margin: 0 auto !important;
+        border-radius: 0 0 20px 20px;
+    }
+    html.app-mode .mobile-app-bottom-nav,
+    body[data-standalone="true"] .mobile-app-bottom-nav {
+        max-width: 460px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        border-radius: 28px 28px 0 0 !important;
+    }
 }
 
 /* ===================================================

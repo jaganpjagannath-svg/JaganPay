@@ -14,7 +14,7 @@
     <!-- 1. DESKTOP VIEW SELECTOR (Visible on Large Screens)              -->
     <!-- Allows switching between: Full Web, Screen 1, Screen 2, Dual Phone -->
     <!-- ================================================================= -->
-    <div class="hidden lg:flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+    <div class="desktop-view-selector hidden lg:flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
         <!-- View Mode Switcher Pills -->
         <div class="inline-flex p-1 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-inner">
             <button type="button" id="tabBtnWebFull" onclick="switchDesktopView('web-full')" 
@@ -57,7 +57,7 @@
     <!-- 2. MOBILE TOP SEGMENTED SWITCHER (Visible on Mobile / App Mode)   -->
     <!-- Switch between Screen 1 (Home) and Screen 2 (Stats)               -->
     <!-- ================================================================= -->
-    <div class="lg:hidden flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+    <div class="mobile-segmented-switcher lg:hidden flex items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
         <div class="inline-flex p-1 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-inner">
             <button type="button" id="mobTabHome" onclick="switchMobileTab('home')" 
                     class="screen-switcher-tab active px-4 py-1.5 rounded-xl text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all">
@@ -1309,27 +1309,56 @@
     function closeUtilityModal() { document.getElementById('utilityModal').classList.add('hidden'); }
 
     // On Load: Detect device and initialize primary view
-    document.addEventListener('DOMContentLoaded', () => {
+    function updateResponsiveDashboardView() {
         const isMobileScreen = window.innerWidth < 1024;
-        const isAppMode = document.documentElement.classList.contains('app-mode') || window.matchMedia('(display-mode: standalone)').matches;
+        const isAppMode = document.documentElement.classList.contains('app-mode') || 
+                          document.documentElement.getAttribute('data-standalone') === 'true' ||
+                          document.body?.getAttribute('data-standalone') === 'true' ||
+                          window.matchMedia('(display-mode: standalone)').matches ||
+                          window.matchMedia('(display-mode: minimal-ui)').matches ||
+                          window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+                          window.navigator.standalone === true ||
+                          localStorage.getItem('jaganpay_app_mode') === 'true';
+
+        const viewWebUnified = document.getElementById('viewWebUnified');
+        const viewMobileApp = document.getElementById('viewMobileApp');
+        const dualViewContainer = document.getElementById('dualViewContainer');
+
+        if (!viewWebUnified || !viewMobileApp) return;
 
         if (isMobileScreen || isAppMode) {
-            document.getElementById('viewWebUnified').classList.add('hidden');
-            document.getElementById('viewMobileApp').classList.remove('hidden');
+            viewWebUnified.classList.add('hidden');
+            if (dualViewContainer) dualViewContainer.classList.add('hidden');
+            viewMobileApp.classList.remove('hidden');
         } else {
-            document.getElementById('viewWebUnified').classList.remove('hidden');
-            document.getElementById('viewMobileApp').classList.add('hidden');
-            renderFintechChart('webAnalyticsChart');
+            const activeTab = document.querySelector('.screen-switcher-tab.active');
+            if (!activeTab || activeTab.id === 'tabBtnWebFull') {
+                viewWebUnified.classList.remove('hidden');
+                viewMobileApp.classList.add('hidden');
+                if (dualViewContainer) dualViewContainer.classList.add('hidden');
+                renderFintechChart('webAnalyticsChart');
+            }
         }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateResponsiveDashboardView();
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('tab') === 'analytics') {
+            const isMobileScreen = window.innerWidth < 1024;
+            const isAppMode = document.documentElement.classList.contains('app-mode') || 
+                              window.matchMedia('(display-mode: standalone)').matches;
             if (isMobileScreen || isAppMode) {
                 switchMobileTab('stats');
             } else {
                 switchDesktopView('screen2');
             }
         }
+    });
+
+    window.addEventListener('resize', () => {
+        updateResponsiveDashboardView();
     });
 </script>
 {% endblock %}

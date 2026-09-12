@@ -110,11 +110,44 @@ if ("serviceWorker" in navigator) {
     });
 }
 
+function isRunningAsApp() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+           window.matchMedia('(display-mode: minimal-ui)').matches ||
+           window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+           window.navigator.standalone === true ||
+           document.documentElement.classList.contains('app-mode') ||
+           document.documentElement.getAttribute('data-standalone') === 'true' ||
+           document.body?.getAttribute('data-standalone') === 'true' ||
+           localStorage.getItem('jaganpay_app_mode') === 'true' ||
+           localStorage.getItem('jaganpay_installed') === 'true';
+}
+
+function purgeAppInstallElements() {
+    if (isRunningAsApp()) {
+        document.querySelectorAll(".pwa-install-trigger, .install-hide-in-app").forEach(btn => btn.remove());
+        const banner = document.getElementById("pwaInstallBanner");
+        if (banner) banner.remove();
+        const modal = document.getElementById("iosInstallModal");
+        if (modal) modal.remove();
+    }
+}
+
+// Purge install buttons if already running in app mode
+document.addEventListener("DOMContentLoaded", () => {
+    purgeAppInstallElements();
+});
+
 window.addEventListener("beforeinstallprompt", (e) => {
+    // If already installed or running as standalone app, completely ignore
+    if (isRunningAsApp()) {
+        purgeAppInstallElements();
+        return;
+    }
+
     e.preventDefault();
     deferredPrompt = e;
 
-    // Show navbar install buttons
+    // Show navbar install buttons only in desktop browser view
     const headerBtns = document.querySelectorAll(".pwa-install-trigger");
     headerBtns.forEach(btn => btn.classList.remove("hidden"));
 
@@ -132,7 +165,9 @@ window.triggerPwaInstall = function() {
         deferredPrompt.prompt();
         deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === "accepted") {
+                localStorage.setItem("jaganpay_installed", "true");
                 showToast("Installing JaganPay App...", "success");
+                purgeAppInstallElements();
             }
             deferredPrompt = null;
             dismissPwaBanner();
@@ -145,8 +180,9 @@ window.triggerPwaInstall = function() {
             if (modal) modal.classList.remove("hidden");
         } else {
             // Check standalone mode
-            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+            if (isRunningAsApp()) {
                 showToast("JaganPay is already installed and running!", "success");
+                purgeAppInstallElements();
             } else {
                 showToast("Click your browser menu (⋮ or Share) and select 'Install' or 'Add to Home Screen'.", "info");
             }
@@ -169,8 +205,14 @@ window.closeIosModal = function() {
 };
 
 window.addEventListener("appinstalled", () => {
+    localStorage.setItem("jaganpay_installed", "true");
+    document.documentElement.classList.add('app-mode');
+    document.documentElement.setAttribute('data-standalone', 'true');
+    if (document.body) {
+        document.body.setAttribute('data-standalone', 'true');
+        document.body.classList.add('app-mode');
+    }
     showToast("JaganPay app installed successfully!", "success");
     dismissPwaBanner();
-    const headerBtns = document.querySelectorAll(".pwa-install-trigger");
-    headerBtns.forEach(btn => btn.classList.add("hidden"));
+    purgeAppInstallElements();
 });
